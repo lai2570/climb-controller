@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Climb Controller GTA</title>
+<!-- Fan-made parody for entertainment only. Not affiliated with Rockstar Games or Take-Two Interactive.
+     Font and sounds load from third-party sites; none are stored in this repository. -->
+<link href="https://fonts.cdnfonts.com/css/pricedown" rel="stylesheet">
+<style>
+:root{
+  --A:#3ddc84; --B:#ff4d4d; --X:#3b8cff; --Y:#ffc928;
+  --glass:rgba(16,16,20,.38); --line:rgba(255,255,255,.6);
+  --gold:#f0c24a; --red:#b3191e; --yellow:#f0c850; --hp:#72cc72; --armor:#3d8fd1; --cash:#72cc72;
+  --price:"Pricedown Bl","Pricedown",Impact,"Arial Narrow Bold",sans-serif;
+  --ui:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --il:env(safe-area-inset-left,0px); --ir:env(safe-area-inset-right,0px); --it:env(safe-area-inset-top,0px); --ib:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;overscroll-behavior:none;font-family:var(--ui);color:#fff}
+[hidden]{display:none!important}
+.price{font-family:var(--price);font-weight:900}
+.out{text-shadow:-.25vmin -.25vmin 0 #000,.25vmin -.25vmin 0 #000,-.25vmin .25vmin 0 #000,.25vmin .25vmin 0 #000,0 .4vmin .6vmin rgba(0,0,0,.6)}
+
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#111;transition:filter 1s}
+#cam.mirror{transform:scaleX(-1)}
+body.wasted #cam{filter:grayscale(1) contrast(1.1) brightness(.8) blur(.15vmin)}
+
+/* ---------- HUD (GTA V layout) ---------- */
+.hudpart{transition:opacity .3s}
+body.nohud .hudpart{opacity:0}
+#radar{position:fixed;left:calc(4vmin + var(--il));bottom:40vmin;width:30vmin;pointer-events:none}
+.map{position:relative;height:19vmin;overflow:hidden;border-radius:.6vmin;opacity:.92;
+  background:
+    linear-gradient(32deg,transparent 46%,#a7a9a3 46.5% 49.5%,transparent 50%),
+    linear-gradient(-58deg,transparent 30%,#8e908b 30.4% 32.6%,transparent 33%),
+    linear-gradient(90deg,transparent 70%,#8e908b 70.3% 72%,transparent 72.3%),
+    radial-gradient(ellipse at 18% 80%,#6f8f6a 0 4vmin,transparent 4.3vmin),
+    radial-gradient(ellipse at 85% 15%,#5b86a8 0 5vmin,transparent 5.3vmin),#d3d1c7}
+.map::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 2vmin rgba(0,0,0,.35)}
+.player{position:absolute;left:50%;top:55%;width:0;height:0;margin:-1.6vmin 0 0 -1.1vmin;border-left:1.1vmin solid transparent;
+  border-right:1.1vmin solid transparent;border-bottom:3.2vmin solid #f2f2f2;filter:drop-shadow(0 0 .3vmin #000);transform-origin:50% 55%;transition:transform .15s}
+.blipY{position:absolute;right:22%;top:20%;width:2.6vmin;height:2.6vmin;border-radius:50%;background:var(--yellow);border:.35vmin solid #000}
+.bars{display:flex;gap:.5vmin;height:1.3vmin;margin-top:.5vmin}
+.bar{flex:1;background:rgba(0,0,0,.55)}.bar i{display:block;height:100%;transition:width .6s}
+#hp{background:var(--hp);width:85%}#ar{background:var(--armor);width:60%}
+#topright{position:fixed;top:calc(4vmin + var(--it));right:calc(4vmin + var(--ir));display:flex;flex-direction:column;align-items:flex-end;gap:.6vmin;pointer-events:none}
+.stars{display:flex;gap:.6vmin}
+.stars svg{width:4.6vmin;height:4.6vmin}
+.stars svg path{fill:rgba(255,255,255,.18);stroke:#000;stroke-width:1.4;stroke-linejoin:round}
+.stars svg.lit path{fill:#fff;animation:flash .5s steps(2) infinite}
+@keyframes flash{50%{fill:#9ec5ff}}
+.money{font-size:6.4vmin;line-height:1}
+.gain{font-size:4.4vmin;line-height:1;color:var(--cash);opacity:0;transition:opacity .3s}
+.gain.show{opacity:1}
+#help{position:fixed;top:calc(4vmin + var(--it));left:calc(4vmin + var(--il));max-width:48vmin;padding:1.6vmin 2vmin;background:rgba(0,0,0,.78);
+  font-size:2.7vmin;line-height:1.45;border-radius:.3vmin;pointer-events:none;opacity:0;transition:opacity .15s}
+#help.show{opacity:1}
+.key{display:inline-flex;align-items:center;justify-content:center;width:3.4vmin;height:3.4vmin;border-radius:50%;
+  font-weight:800;font-size:2.1vmin;color:#111;vertical-align:-.7vmin;margin:0 .3vmin}
+#feed{position:fixed;left:calc(4vmin + var(--il));bottom:63vmin;width:42vmin;display:flex;gap:1.4vmin;padding:1.4vmin;background:rgba(0,0,0,.78);
+  border-radius:.3vmin;pointer-events:none;transform:translateX(-120%);transition:transform .25s ease-out}
+#feed.show{transform:none}
+.avatar{flex:none;width:7.5vmin;height:7.5vmin;display:flex;align-items:center;justify-content:center;font-size:5vmin;background:#2f6b3a}
+.feedtext{min-width:0;font-size:2.5vmin;line-height:1.35}
+.feedtext b{display:block;font-size:2.7vmin}
+.feedtext small{display:block;color:#bbb;font-size:2.1vmin}
+
+#pops{position:fixed;left:0;right:0;top:24%;height:0;display:flex;justify-content:center;pointer-events:none}
+.pop{position:absolute;white-space:nowrap;font-size:11vmin;line-height:1.1;animation:rise .9s ease-out forwards}
+@keyframes rise{0%{transform:translateY(2vmin) scale(.8);opacity:0}15%{transform:scale(1.05);opacity:1}70%{opacity:1}100%{transform:translateY(-8vmin);opacity:0}}
+#sub{position:fixed;left:50%;bottom:37vmin;transform:translateX(-50%);width:max-content;max-width:70vw;text-align:center;
+  font-size:3.6vmin;font-weight:600;line-height:1.3;pointer-events:none;opacity:0;transition:opacity .2s}
+#sub.show{opacity:1}
+#sub .y{color:var(--yellow)}
+#banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;
+  background:linear-gradient(transparent 36%,rgba(0,0,0,.62) 41% 59%,transparent 64%)}
+#banner.show{animation:ban var(--dur,4.5s) ease forwards}
+@keyframes ban{0%{opacity:0}6%{opacity:1}88%{opacity:1}100%{opacity:0}}
+#bt{font-size:16vmin;line-height:1}
+#bs{font-size:4vmin;font-weight:600;margin-top:.6vmin}
+#banner.passed #bt{color:var(--gold)}
+#banner.wasted #bt{color:var(--red)}
+#banner.title{background:none}
+#banner.title #bt{font-size:13vmin}
+#count{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:32vmin}
+
+/* ---------- controller (the joke; not part of the game HUD) ---------- */
+.pad{position:fixed;touch-action:none}
+#stick{left:calc(5vmin + var(--il));bottom:calc(5vmin + var(--ib));width:30vmin;height:30vmin;border-radius:50%;
+  background:var(--glass);border:.5vmin solid var(--line);box-shadow:inset 0 0 3vmin rgba(0,0,0,.5)}
+#knob{position:absolute;left:50%;top:50%;width:14vmin;height:14vmin;margin:-7vmin 0 0 -7vmin;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#f2f2f2,#9a9aa2 60%,#5c5c66);box-shadow:0 1vmin 2vmin rgba(0,0,0,.6);pointer-events:none}
+#dpad{left:calc(39vmin + var(--il));bottom:calc(5vmin + var(--ib));width:24vmin;height:24vmin;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr)}
+#dpad .d{background:rgba(16,16,20,.55);border:.4vmin solid var(--line);display:flex;align-items:center;justify-content:center;font-size:3.2vmin;color:rgba(255,255,255,.85)}
+#dpad .d.on{background:#fff;color:#111}
+#dpad .c{grid-area:2/2;background:rgba(16,16,20,.55)}
+#dpad .u{grid-area:1/2;border-radius:1.2vmin 1.2vmin 0 0;border-bottom:0}
+#dpad .l{grid-area:2/1;border-radius:1.2vmin 0 0 1.2vmin;border-right:0}
+#dpad .r{grid-area:2/3;border-radius:0 1.2vmin 1.2vmin 0;border-left:0}
+#dpad .dn{grid-area:3/2;border-radius:0 0 1.2vmin 1.2vmin;border-top:0}
+#face{right:calc(5vmin + var(--ir));bottom:calc(5vmin + var(--ib));width:33vmin;height:33vmin}
+.fb{position:absolute;width:12vmin;height:12vmin;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font:700 5.5vmin/1 var(--ui);color:var(--c);background:rgba(12,12,16,.55);border:.5vmin solid var(--c);box-shadow:0 .8vmin 1.6vmin rgba(0,0,0,.45);transition:transform .06s}
+.fb.on{background:var(--c);color:#111;transform:scale(.9)}
+.fb[data-k=Y]{--c:var(--Y);left:10.5vmin;top:0}.fb[data-k=A]{--c:var(--A);left:10.5vmin;bottom:0}
+.fb[data-k=X]{--c:var(--X);left:0;top:10.5vmin}.fb[data-k=B]{--c:var(--B);right:0;top:10.5vmin}
+.sh{position:fixed;width:17vmin;height:9vmin;display:flex;align-items:center;justify-content:center;font:700 4vmin/1 var(--ui);
+  background:var(--glass);border:.5vmin solid var(--line);border-radius:2.5vmin 2.5vmin 1vmin 1vmin}
+.sh.on{background:#fff;color:#111}
+#L{left:calc(42.5vmin + var(--il));bottom:32vmin}
+#R{right:calc(13vmin + var(--ir));bottom:41vmin}
+.mid{position:fixed;left:50%;bottom:calc(6vmin + var(--ib));transform:translateX(-50%);display:flex;gap:2vmin}
+.pill{font:700 2.6vmin/1 var(--ui);letter-spacing:.3vmin;color:#fff;width:12vmin;padding:1.6vmin 0;border-radius:3vmin;background:rgba(16,16,20,.55);border:.4vmin solid var(--line)}
+.pill.on{background:#fff;color:#111}
+
+/* ---------- top tools (hidden while a take is recording) ---------- */
+.tools{position:fixed;top:calc(3vmin + var(--it));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:1.6vmin;
+  width:max-content;max-width:60vw;transition:opacity .3s;z-index:3}
+.tools button{font:600 2.6vmin/1 var(--ui);letter-spacing:.15vmin;color:#fff;background:rgba(0,0,0,.6);border:.3vmin solid rgba(255,255,255,.35);border-radius:4vmin;padding:1.3vmin 2.4vmin}
+body:not(.vmode) .vonly{display:none}
+body.vmode #flip{display:none}
+body.playing .tools{opacity:0}
+
+/* ---------- start screen ---------- */
+#start{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3vmin;text-align:center;padding:4vmin calc(6vmin + var(--ir)) 4vmin calc(6vmin + var(--il));overflow-y:auto}
+#start h1{margin:0;font-size:12vmin;line-height:1;color:var(--gold);font-weight:900}
+#start p{margin:0;font-size:3.4vmin;max-width:60ch;color:#ddd;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;justify-content:center;gap:3vmin}
+.choice{font-family:var(--price);font-weight:900;font-size:6vmin;color:#111;border:0;border-radius:1vmin;padding:1.6vmin 6vmin;cursor:pointer;background:var(--gold)}
+.choice.alt{background:#ddd}
+#disclaimer{font-size:2.8vmin;color:#ff9a8a;max-width:60ch;line-height:1.5}
+#err{color:#ff8a8a;font-size:3.2vmin;max-width:60ch}
+
+/* ---------- 9:16 phone, kept clear of Instagram's top bar, caption and side buttons ---------- */
+@media (orientation:portrait){
+  #topright{top:19vh;right:5vmin}
+  #help{top:19vh;left:5vmin;max-width:58vmin;font-size:3.1vmin}
+  .key{width:3.8vmin;height:3.8vmin;font-size:2.4vmin}
+  #stick{left:5vmin;bottom:28vh;width:26vmin;height:26vmin}
+  #knob{width:12vmin;height:12vmin;margin:-6vmin 0 0 -6vmin}
+  #dpad{left:34vmin;bottom:calc(28vh + 3vmin);width:20vmin;height:20vmin}
+  #face{right:14vmin;bottom:28vh;width:29vmin;height:29vmin}
+  .fb{width:10.5vmin;height:10.5vmin;font-size:4.8vmin}
+  .fb[data-k=Y],.fb[data-k=A]{left:9.25vmin}
+  .fb[data-k=X],.fb[data-k=B]{top:9.25vmin}
+  .sh{width:14vmin;height:7.5vmin;font-size:3.4vmin}
+  #L{left:5vmin;bottom:calc(28vh + 30vmin)}
+  #R{right:14vmin;bottom:calc(28vh + 30vmin)}
+  .mid{left:44vmin;bottom:calc(28vh + 31vmin)}
+  .pill{width:10vmin;font-size:2.2vmin;padding:1.4vmin 0}
+  #radar{left:5vmin;bottom:calc(28vh + 42vmin)}
+  #feed{left:38vmin;bottom:calc(28vh + 42vmin);width:48vmin;transform:translateX(-160%)}
+  #feed.show{transform:none}
+  #sub{bottom:calc(28vh + 66vmin);max-width:86vw;font-size:4.2vmin}
+  #pops{top:30vh}
+  #bt{font-size:15vmin}
+  #banner.title #bt{font-size:12vmin}
+  #bs{font-size:4.4vmin}
+  .tools{top:calc(3vh + var(--it));max-width:92vw}
+  .tools button{font-size:3vmin}
+}
+@media (prefers-reduced-motion:reduce){.stars svg.lit path{animation:none}}
+</style>
+</head>
+<body>
+<video id="cam" autoplay muted playsinline></video>
+
+<div id="radar" class="hudpart">
+  <div class="map"><div class="blipY"></div><div class="player" id="blip"></div></div>
+  <div class="bars"><div class="bar"><i id="hp"></i></div><div class="bar"><i id="ar"></i></div></div>
+</div>
+<div id="topright" class="hudpart">
+  <div class="stars" id="stars"></div>
+  <div class="money price out" id="money">$0</div>
+  <div class="gain price out" id="gain">+$0</div>
+</div>
+<div id="help" class="hudpart"></div>
+<div id="feed" class="hudpart"><div class="avatar price" id="av">C</div>
+  <div class="feedtext"><b id="fname">Climber</b><small>Text message</small><span id="fmsg"></span></div></div>
+
+<div id="pops"></div>
+<div id="sub" class="out hudpart"></div>
+<div id="banner"><div id="bt" class="price out"></div><div id="bs" class="out"></div></div>
+<div id="count" class="price out" hidden></div>
+
+<div class="tools">
+  <button id="flip" type="button">FLIP CAM</button>
+  <button id="restart" class="vonly" type="button">▶ 3-2-1 PLAY</button>
+  <button id="play" class="vonly" type="button">PLAY</button>
+  <button id="speed" class="vonly" type="button">SPEED 1x</button>
+  <button id="hudBtn" type="button">HUD ON</button>
+  <button id="snd" type="button">SOUND ON</button>
+</div>
+
+<div class="sh pad btn" id="L" data-k="L">L</div>
+<div class="sh pad btn" id="R" data-k="R">R</div>
+<div class="pad" id="stick"><div id="knob"></div></div>
+<div class="pad" id="dpad">
+  <div class="d u btn" data-k="UP">▲</div><div class="d l btn" data-k="LEFT">◀</div><div class="c"></div>
+  <div class="d r btn" data-k="RIGHT">▶</div><div class="d dn btn" data-k="DOWN">▼</div>
+</div>
+<div class="pad" id="face">
+  <div class="fb btn" data-k="Y">Y</div><div class="fb btn" data-k="X">X</div>
+  <div class="fb btn" data-k="B">B</div><div class="fb btn" data-k="A">A</div>
+</div>
+<div class="mid">
+  <button class="pill btn" type="button" data-k="SELECT">SELECT</button>
+  <button class="pill btn" type="button" data-k="START">START</button>
+</div>
+
+<div id="start">
+  <h1 class="price out">climb controller</h1>
+  <p>Film the climb with your normal camera first. Then tap <b>USE A VIDEO</b>, start screen recording,
+     tap <b>3-2-1 PLAY</b> and press buttons along with the clip.<br>
+     START = mission passed. Hold B = wasted. SELECT = text message.</p>
+  <div class="choices">
+    <label class="choice">USE A VIDEO<input id="file" type="file" accept="video/*" hidden></label>
+    <button id="go" class="choice alt" type="button">LIVE CAMERA</button>
+  </div>
+  <p id="disclaimer">Fan-made parody for entertainment only. Not for commercial use.
+     Not affiliated with Rockstar Games or Take-Two Interactive.<br>
+     粉絲自製的惡搞作品，僅供娛樂使用，請勿用於商業用途。與 Rockstar Games、Take-Two 無關。</p>
+  <div id="err"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const cam = $('#cam');
+let facing = 'environment', stream = null, videoMode = false;
+
+/* ---- sounds: loaded from myinstants.com at runtime, not stored in this repo ---- */
+const SND_BASE = 'https://www.myinstants.com/media/sounds/';
+const SOUNDS = {
+  wasted: 'gta-v-wasted-death-sound.mp3',
+  passed: 'gta-v-mission-passed.mp3',
+  text: 'gta-v-notification.mp3',
+  blip: 'gta-v-notification-better-version_WAYpogU.mp3',
+};
+const audio = {};
+for (const [k, f] of Object.entries(SOUNDS)) { const a = new Audio(SND_BASE + f); a.preload = 'auto'; audio[k] = a; }
+let soundOn = true, ac = null;
+function play(k) {
+  if (!soundOn) return;
+  const a = audio[k]; if (!a) return;
+  try { a.currentTime = 0; a.play().catch(() => {}); } catch (e) {}
+}
+function click() { // short UI click for button presses (the game's button sounds aren't available)
+  if (!ac || !soundOn) return;
+  const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = 900;
+  g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0001, t + .04);
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + .05);
+}
+const buzz = ms => { try { navigator.vibrate?.(ms); } catch (e) {} };
+
+/* ---- camera ---- */
+async function startCam() {
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    $('#err').textContent = 'Camera needs an https:// link.'; return false;
+  }
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    cam.srcObject = stream; await cam.play().catch(() => {});
+    cam.classList.toggle('mirror', facing === 'user');
+    return true;
+  } catch (e) {
+    $('#err').textContent = 'Camera blocked: ' + (e.name || e) + '. Allow camera access and reload.'; return false;
+  }
+}
+
+/* ---- HUD state ---- */
+let cash = 0, shown = 0, heat = 0, gainT;
+const STAR = '<svg viewBox="0 0 24 24"><path d="M12 1.8l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.6l-6.3 3.6 1.5-7.1L1.8 9.2 9 8.4z"/></svg>';
+$('#stars').innerHTML = STAR.repeat(5);
+function renderStars() {
+  const n = Math.min(5, Math.floor(heat / 4));
+  document.querySelectorAll('#stars svg').forEach((s, i) => s.classList.toggle('lit', i < n));
+}
+setInterval(() => { if (heat > 0) { heat--; renderStars(); } }, 1500);
+function addCash(n) {
+  cash += n;
+  const g = $('#gain'); g.textContent = '+$' + n.toLocaleString('en-US'); g.classList.add('show');
+  clearTimeout(gainT); gainT = setTimeout(() => g.classList.remove('show'), 1200);
+}
+(function tick() {
+  if (shown !== cash) { shown += Math.ceil((cash - shown) / 6); $('#money').textContent = '$' + shown.toLocaleString('en-US'); }
+  requestAnimationFrame(tick);
+})();
+function resetHud() {
+  cash = shown = 0; $('#money').textContent = '$0'; heat = 0; renderStars();
+  $('#hp').style.width = '85%'; document.body.classList.remove('wasted');
+}
+
+/* ---- GTA-style messages ---- */
+const KEYC = { A: 'var(--A)', B: 'var(--B)', X: 'var(--X)', Y: 'var(--Y)', L: '#ddd', R: '#ddd' };
+let helpT;
+function help(text, ms = 4000) {
+  const h = $('#help');
+  h.innerHTML = '';
+  text.split(/(\[[ABXYLR]\])/).forEach(part => {
+    const m = part.match(/^\[([ABXYLR])\]$/);
+    if (m) { const k = document.createElement('span'); k.className = 'key'; k.style.background = KEYC[m[1]]; k.textContent = m[1]; h.append(k); }
+    else h.append(part);
+  });
+  h.classList.add('show'); play('blip');
+  clearTimeout(helpT); helpT = setTimeout(() => h.classList.remove('show'), ms);
+}
+let subT;
+function subtitle(text, ms = 3000) {
+  const s = $('#sub'); s.innerHTML = '';
+  text.split(/(\{[^}]+\})/).forEach(part => {
+    const m = part.match(/^\{(.+)\}$/);
+    if (m) { const y = document.createElement('span'); y.className = 'y'; y.textContent = m[1]; s.append(y); }
+    else s.append(part);
+  });
+  s.classList.add('show');
+  clearTimeout(subT); subT = setTimeout(() => s.classList.remove('show'), ms);
+}
+const TEXTS = [
+  ['Climber', 'Bro, who is controlling me??'],
+  ['Climber', "Next time I'm holding the controller."],
+  ['Belayer', 'I got you. Probably.'],
+  ['Climber', 'Stop pressing random buttons.'],
+];
+let textI = 0, feedT;
+function textMessage() {
+  const [who, msg] = TEXTS[textI++ % TEXTS.length];
+  $('#av').textContent = who[0]; $('#fname').textContent = who; $('#fmsg').textContent = msg;
+  $('#feed').classList.add('show'); play('text'); buzz([30, 60, 30]);
+  clearTimeout(feedT); feedT = setTimeout(() => $('#feed').classList.remove('show'), 4500);
+}
+const LINES = [
+  'Which hold? THAT one?', 'Left hand. No, your other left.', 'My forearms are filing a complaint.',
+  'Who gave you this much power?', 'This was not in the tutorial.', 'Bro, the lag is on your end.',
+];
+function pop(text, color = '#fff') {
+  const p = document.createElement('div');
+  p.className = 'pop price out'; p.textContent = text; p.style.color = color;
+  const box = $('#pops'); while (box.children.length > 2) box.firstChild.remove();
+  box.appendChild(p); p.addEventListener('animationend', () => p.remove());
+}
+let banT;
+function banner(kind, title, sub, dur = 4.5) {
+  const b = $('#banner'); b.className = ''; void b.offsetWidth;
+  b.style.setProperty('--dur', dur + 's');
+  b.className = 'show ' + kind; $('#bt').textContent = title; $('#bs').textContent = sub || '';
+}
+
+/* ---- moves ---- */
+const ACTS = {
+  A: ['JUMP', '#3ddc84'], B: ['LET GO', '#ff4d4d'], X: ['GRAB HOLD', '#3b8cff'], Y: ['CHALK UP', '#ffc928'],
+  L: ['LOOK DOWN', '#fff'], R: ['DYNO!', '#ff9a3c'],
+  UP: ['REACH UP', '#fff'], DOWN: ['STEP DOWN', '#fff'], LEFT: ['TRAVERSE LEFT', '#fff'], RIGHT: ['TRAVERSE RIGHT', '#fff'],
+};
+function action(k) {
+  if (k === 'START') return passed();
+  if (k === 'SELECT') return textMessage();
+  const a = ACTS[k]; if (!a) return;
+  pop(a[0], a[1]); click(); buzz(15);
+  addCash(50 + Math.floor(Math.random() * 450));
+  heat++; renderStars();
+  if (Math.random() < .25) subtitle(LINES[Math.floor(Math.random() * LINES.length)]);
+}
+function passed() {
+  document.body.classList.remove('wasted');
+  banner('passed', 'mission passed', 'Send It', 4.75);
+  play('passed'); buzz([40, 60, 40]);
+  addCash(5000); heat = 0; renderStars(); $('#hp').style.width = '100%';
+}
+let wastedT;
+function wasted() {
+  document.body.classList.add('wasted');
+  $('#hp').style.width = '0%';
+  play('wasted'); buzz(400);
+  if (videoMode && !cam.paused) cam.playbackRate = .35; // GTA's slow-motion death
+  setTimeout(() => banner('wasted', 'wasted', '', 5.4), 600);
+  clearTimeout(wastedT);
+  wastedT = setTimeout(() => { document.body.classList.remove('wasted'); cam.playbackRate = rate; }, 6000);
+}
+
+/* ---- buttons (multi-touch) ---- */
+document.querySelectorAll('.btn').forEach(el => {
+  let holdT;
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault(); el.setPointerCapture?.(e.pointerId);
+    el.classList.add('on'); action(el.dataset.k);
+    if (el.dataset.k === 'B') holdT = setTimeout(wasted, 900);
+  });
+  const up = () => { el.classList.remove('on'); clearTimeout(holdT); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+});
+
+/* ---- stick ---- */
+const stick = $('#stick'), knob = $('#knob'), blip = $('#blip');
+let sid = null, lastDir = null;
+function moveStick(e) {
+  const r = stick.getBoundingClientRect(), R = r.width / 2;
+  let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R);
+  const dist = Math.hypot(dx, dy), max = R * .62;
+  if (dist > max) { dx *= max / dist; dy *= max / dist; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  if (dist < R * .35) return;
+  const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+  blip.style.transform = `rotate(${ang + 90}deg)`;
+  const dir = ang > -135 && ang <= -45 ? 'UP' : ang > -45 && ang <= 45 ? 'RIGHT' : ang > 45 && ang <= 135 ? 'DOWN' : 'LEFT';
+  if (dir !== lastDir) { lastDir = dir; pop('CLIMB ' + dir); click(); buzz(10); addCash(20 + Math.floor(Math.random() * 80)); heat++; renderStars(); }
+}
+stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); sid = e.pointerId; moveStick(e); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === sid) moveStick(e); });
+const release = e => { if (e.pointerId !== sid) return; sid = null; lastDir = null; knob.style.transform = ''; };
+stick.addEventListener('pointerup', release); stick.addEventListener('pointercancel', release);
+
+/* ---- tools ---- */
+$('#flip').addEventListener('click', () => { facing = facing === 'environment' ? 'user' : 'environment'; startCam(); });
+$('#snd').addEventListener('click', e => { soundOn = !soundOn; e.target.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; });
+$('#hudBtn').addEventListener('click', e => { const off = document.body.classList.toggle('nohud'); e.target.textContent = off ? 'HUD OFF' : 'HUD ON'; });
+
+let wake = null;
+async function keepAwake() { try { wake = await navigator.wakeLock?.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+async function boot() {
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  // Unlock the HTML audio elements on this first tap so later sounds can play.
+  for (const a of Object.values(audio)) { a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); }
+  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (e) {}
+  keepAwake();
+}
+function missionStart() {
+  banner('title', 'Send It', '', 3);
+  setTimeout(() => subtitle('Climb to the {top}.', 3500), 1200);
+  setTimeout(() => help('Use the stick to climb. Press [A] to jump.', 4500), 1600);
+}
+$('#go').addEventListener('click', async () => {
+  await boot();
+  if (!(await startCam())) return;
+  $('#start').hidden = true;
+  setTimeout(missionStart, 400);
+});
+
+/* ---- video mode ---- */
+let rate = 1, counting = false;
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  await boot();
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  cam.srcObject = null; cam.src = URL.createObjectURL(f);
+  cam.muted = false; cam.loop = false; cam.classList.remove('mirror');
+  cam.addEventListener('loadeddata', () => { cam.pause(); cam.currentTime = 0; }, { once: true });
+  videoMode = true; document.body.classList.add('vmode');
+  $('#start').hidden = true;
+});
+const setPlaying = p => { document.body.classList.toggle('playing', p); $('#play').textContent = p ? 'PAUSE' : 'PLAY'; };
+cam.addEventListener('play', () => setPlaying(true));
+cam.addEventListener('pause', () => { if (!counting) setPlaying(false); });
+cam.addEventListener('ended', () => setPlaying(false));
+$('#play').addEventListener('click', () => { if (videoMode) cam.paused ? cam.play() : cam.pause(); });
+$('#restart').addEventListener('click', async () => {
+  if (counting) return;
+  counting = true; cam.pause(); cam.currentTime = 0; cam.playbackRate = rate; resetHud();
+  document.body.classList.add('playing');
+  const c = $('#count');
+  for (const n of ['3', '2', '1']) { c.textContent = n; c.hidden = false; click(); await new Promise(r => setTimeout(r, 800)); }
+  c.hidden = true; counting = false;
+  await cam.play().catch(() => setPlaying(false));
+  missionStart();
+});
+$('#speed').addEventListener('click', e => {
+  rate = rate === 1 ? .5 : 1;
+  cam.playbackRate = cam.defaultPlaybackRate = rate;
+  e.target.textContent = 'SPEED ' + rate + 'x';
+});
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+</script>
+</body>
+</html>
