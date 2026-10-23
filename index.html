@@ -130,6 +130,7 @@ body.nohud .hud,body.nohud .sub{opacity:0}
 /* Start screen */
 #start{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:3vmin;text-align:center;padding:4vmin calc(6vmin + var(--ir)) 4vmin calc(6vmin + var(--il))}
+#start[hidden]{display:none}
 #start h1{margin:0;font-family:var(--display);font-weight:400;font-size:12vmin;line-height:1;color:var(--gold);-webkit-text-stroke:.3vmin #000}
 #start p{margin:0;font-size:3.6vmin;max-width:60ch;color:#ddd;line-height:1.5}
 #go{font-family:var(--display);font-size:6vmin;letter-spacing:.4vmin;color:#111;background:var(--A);border:0;border-radius:2vmin;padding:2vmin 7vmin}
