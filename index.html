@@ -133,7 +133,22 @@ body.nohud .hud,body.nohud .sub{opacity:0}
 #start[hidden]{display:none}
 #start h1{margin:0;font-family:var(--display);font-weight:400;font-size:12vmin;line-height:1;color:var(--gold);-webkit-text-stroke:.3vmin #000}
 #start p{margin:0;font-size:3.6vmin;max-width:60ch;color:#ddd;line-height:1.5}
-#go{font-family:var(--display);font-size:6vmin;letter-spacing:.4vmin;color:#111;background:var(--A);border:0;border-radius:2vmin;padding:2vmin 7vmin}
+.choices{display:flex;flex-wrap:wrap;justify-content:center;gap:3vmin}
+#go,.pickbtn{font-family:var(--display);font-size:6vmin;letter-spacing:.4vmin;color:#111;background:var(--A);border:0;border-radius:2vmin;padding:2vmin 6vmin;cursor:pointer}
+.pickbtn{background:var(--Y)}
+#start p.hint{font-size:3vmin;color:#aaa}
+
+/* Video mode: play a filmed clip behind the controller */
+body:not(.vmode) .vonly{display:none}
+body.vmode #flip{display:none}
+.tools{transition:opacity .3s}
+body.playing .tools{opacity:0} /* invisible while recording, but tapping where PAUSE was still pauses */
+#count{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+  font-family:var(--display);font-size:30vmin;color:#fff;-webkit-text-stroke:.6vmin #000}
+#count[hidden]{display:none}
+@media (orientation:portrait){
+  .tools{top:calc(30vmin + var(--it));width:92vw;flex-wrap:wrap;justify-content:center}
+}
 #err{color:#ff8a8a;font-size:3.4vmin;max-width:60ch;line-height:1.5}
 
 @media (orientation:portrait){
@@ -162,12 +177,16 @@ body.nohud .hud,body.nohud .sub{opacity:0}
 
 <div class="tools">
   <button id="flip" type="button">FLIP CAM</button>
+  <button id="restart" class="vonly" type="button">▶ 3-2-1 PLAY</button>
+  <button id="play" class="vonly" type="button">PLAY</button>
+  <button id="speed" class="vonly" type="button">SPEED 1x</button>
   <button id="snd" type="button">SOUND ON</button>
 </div>
 
 <div id="pops"></div>
 <div class="sub ts" id="sub"></div>
 <div id="banner"><div id="bt"></div><div id="bs" class="ts"></div></div>
+<div id="count" hidden></div>
 
 <div class="sh pad btn ts" id="L" data-k="L">L</div>
 <div class="sh pad btn ts" id="R" data-k="R">R</div>
@@ -198,7 +217,12 @@ body.nohud .hud,body.nohud .sub{opacity:0}
   <h1>CLIMB CONTROLLER</h1>
   <p>Point the back camera at your climber. Stick and D-pad move them, buttons do moves.
      START = Mission Passed. Hold B = Wasted. SELECT hides the HUD.</p>
-  <button id="go" type="button">PRESS START</button>
+  <div class="choices">
+    <button id="go" type="button">LIVE CAMERA</button>
+    <label id="pick" class="pickbtn">USE A VIDEO<input id="file" type="file" accept="video/*" hidden></label>
+  </div>
+  <p class="hint">Hard to film and play at the same time? Film the climb first with your normal camera.
+     Then tap USE A VIDEO, start screen recording, and press buttons along with the clip.</p>
   <div id="err"></div>
 </div>
 
@@ -359,14 +383,64 @@ $('#snd').addEventListener('click', e => { soundOn = !soundOn; e.target.textCont
 let wake = null;
 async function keepAwake() { try { wake = await navigator.wakeLock?.request('screen'); } catch (e) {} }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
-$('#go').addEventListener('click', async () => {
-  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+async function boot() {
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (e) {}
+  keepAwake();
+}
+$('#go').addEventListener('click', async () => {
+  await boot();
   const ok = await startCam();
   if (!ok) return;
   $('#start').hidden = true;
-  keepAwake();
   setTimeout(() => banner('mission', 'MISSION: SEND IT', 'Get the climber to the top'), 400);
+});
+
+/* video mode: a filmed clip plays behind the controller, you press along and screen record */
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  await boot();
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  cam.srcObject = null;
+  cam.src = URL.createObjectURL(f);
+  cam.muted = false; // keep the clip's own sound in the recording
+  cam.loop = false;
+  cam.classList.remove('mirror');
+  cam.addEventListener('loadeddata', () => { cam.pause(); cam.currentTime = 0; }, { once: true });
+  document.body.classList.add('vmode');
+  $('#start').hidden = true;
+});
+const setPlaying = p => { document.body.classList.toggle('playing', p); $('#play').textContent = p ? 'PAUSE' : 'PLAY'; };
+cam.addEventListener('play', () => setPlaying(true));
+cam.addEventListener('pause', () => setPlaying(false));
+cam.addEventListener('ended', () => setPlaying(false));
+$('#play').addEventListener('click', () => { if (!document.body.classList.contains('vmode')) return; cam.paused ? cam.play() : cam.pause(); });
+
+let counting = false;
+$('#restart').addEventListener('click', async () => {
+  if (counting) return;
+  counting = true;
+  cam.pause(); cam.currentTime = 0;
+  document.body.classList.remove('wasted'); $('#hp').style.width = '100%';
+  cash = 0; heat = 0; renderStars();
+  const c = $('#count');
+  document.body.classList.add('playing'); // hide the tools during the countdown too
+  for (const n of ['3', '2', '1']) {
+    c.textContent = n; c.hidden = false; tone(440, .12, 'square', .08);
+    await new Promise(r => setTimeout(r, 800));
+  }
+  c.hidden = true; tone(880, .25, 'square', .08);
+  counting = false;
+  await cam.play().catch(() => setPlaying(false));
+  banner('mission', 'MISSION: SEND IT', 'Get the climber to the top');
+});
+
+let rate = 1;
+$('#speed').addEventListener('click', e => {
+  rate = rate === 1 ? .5 : 1;
+  cam.playbackRate = cam.defaultPlaybackRate = rate;
+  e.target.textContent = 'SPEED ' + rate + 'x';
 });
 
 document.addEventListener('contextmenu', e => e.preventDefault());
