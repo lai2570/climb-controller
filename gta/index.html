@@ -67,8 +67,8 @@ body.nohud .hudpart{opacity:0}
 .key{display:inline-flex;align-items:center;justify-content:center;width:3.4cqmin;height:3.4cqmin;border-radius:50%;
   font-weight:800;font-size:2.1cqmin;color:#111;vertical-align:-.7cqmin;margin:0 .3cqmin}
 #feed{position:fixed;left:calc(4cqmin + var(--il));bottom:63cqmin;width:42cqmin;display:flex;gap:1.4cqmin;padding:1.4cqmin;background:rgba(0,0,0,.78);
-  border-radius:.3cqmin;pointer-events:none;transform:translateX(-120%);transition:transform .25s ease-out}
-#feed.show{transform:none}
+  border-radius:.3cqmin;pointer-events:none;transform:translateX(-120%);opacity:0;transition:transform .25s ease-out,opacity .25s}
+#feed.show{transform:none;opacity:1}
 .avatar{flex:none;width:7.5cqmin;height:7.5cqmin;display:flex;align-items:center;justify-content:center;font-size:5cqmin;background:#2f6b3a}
 .feedtext{min-width:0;font-size:2.5cqmin;line-height:1.35}
 .feedtext b{display:block;font-size:2.7cqmin}
@@ -85,8 +85,8 @@ body.nohud .hudpart{opacity:0}
   background:linear-gradient(transparent 36%,rgba(0,0,0,.62) 41% 59%,transparent 64%)}
 #banner.show{animation:ban var(--dur,4.5s) ease forwards}
 @keyframes ban{0%{opacity:0}6%{opacity:1}88%{opacity:1}100%{opacity:0}}
-#bt{font-size:16cqmin;line-height:1}
-#bs{font-size:4cqmin;font-weight:600;margin-top:.6cqmin}
+#bt{font-size:16cqmin;line-height:1;white-space:nowrap;text-align:center}
+#bs{font-size:4cqmin;font-weight:600;margin-top:.6cqmin;text-align:center}
 #banner.passed #bt{color:var(--gold)}
 #banner.wasted #bt{color:var(--red)}
 #banner.title{background:none}
@@ -163,8 +163,8 @@ body.playing .tools{opacity:0}
   #feed.show{transform:none}
   #sub{bottom:calc(28cqh + 66cqmin);max-width:86vw;font-size:4.2cqmin}
   #pops{top:30cqh}
-  #bt{font-size:15cqmin}
-  #banner.title #bt{font-size:12cqmin}
+  #bt{font-size:12cqmin}
+  #banner.title #bt{font-size:11cqmin}
   #bs{font-size:4.4cqmin}
   .tools{top:calc(3cqh + var(--it));max-width:92vw}
   .tools button{font-size:3cqmin}
@@ -245,7 +245,7 @@ let facing = 'environment', stream = null, videoMode = false;
 const SND_BASE = 'https://www.myinstants.com/media/sounds/';
 const SOUNDS = {
   wasted: 'gta-v-wasted-death-sound.mp3',
-  passed: 'gta-v-mission-passed.mp3',
+  passed: 'gta-sa-mission-passed-theme.mp3', // GTA San Andreas theme, ~9 s
   text: 'gta-v-notification.mp3',
   blip: 'gta-v-notification-better-version_WAYpogU.mp3',
 };
@@ -362,8 +362,8 @@ function banner(kind, title, sub, dur = 4.5) {
 
 /* ---- moves ---- */
 const ACTS = {
-  A: ['JUMP', '#3ddc84'], B: ['LET GO', '#ff4d4d'], X: ['GRAB HOLD', '#3b8cff'], Y: ['CHALK UP', '#ffc928'],
-  L: ['LOOK DOWN', '#fff'], R: ['DYNO!', '#ff9a3c'],
+  A: ['FLAGGING', '#3ddc84'], B: ['HOOK', '#ff4d4d'], X: ['GRAB HOLD', '#3b8cff'], Y: ['CHALK UP', '#ffc928'],
+  L: ['MANTLE', '#fff'], R: ['DYNO!', '#ff9a3c'],
   UP: ['REACH UP', '#fff'], DOWN: ['STEP DOWN', '#fff'], LEFT: ['TRAVERSE LEFT', '#fff'], RIGHT: ['TRAVERSE RIGHT', '#fff'],
 };
 function action(k) {
@@ -377,7 +377,7 @@ function action(k) {
 }
 function passed() {
   document.body.classList.remove('wasted');
-  banner('passed', 'mission passed', 'Send It', 4.75);
+  banner('passed', 'mission passed', 'Send It', 6);
   play('passed'); buzz([40, 60, 40]);
   addCash(5000); heat = 0; renderStars(); $('#hp').style.width = '100%';
 }
@@ -455,7 +455,7 @@ async function boot() {
 function missionStart() {
   banner('title', 'Send It', '', 3);
   setTimeout(() => subtitle('Climb to the {top}.', 3500), 1200);
-  setTimeout(() => help('Use the stick to climb. Press [A] to jump.', 4500), 1600);
+  setTimeout(() => help('Use the stick to climb. Press [A] to flag.', 4500), 1600);
 }
 $('#go').addEventListener('click', async () => {
   await boot();

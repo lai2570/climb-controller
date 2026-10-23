@@ -22,6 +22,7 @@ Play your clip behind an on-screen controller, press buttons along with it, and 
 
 **此版本的外觀與音效高度仿照 GTA 5，是粉絲自製的惡搞作品，僅供娛樂使用，請勿用於商業用途。**
 
+- The mission passed sound is the GTA San Andreas theme; the other sounds and the HUD style follow GTA 5.
 - Grand Theft Auto, GTA and all related sounds and designs belong to Rockstar Games and Take-Two Interactive.
   This project is not affiliated with or endorsed by them.
 - The game sounds and the Pricedown font are **not stored in this repository**. The page loads them at runtime from
