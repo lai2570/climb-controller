@@ -14,7 +14,9 @@
 :root{
   --A:#3ddc84; --B:#ff4d4d; --X:#3b8cff; --Y:#ffc928;
   --glass:rgba(16,16,20,.38); --line:rgba(255,255,255,.6);
-  --gold:#f0c24a; --red:#b3191e; --yellow:#f0c850; --hp:#72cc72; --armor:#3d8fd1; --cash:#72cc72;
+  /* San Andreas HUD colours */
+  --sa-gold:#e1a93a; --sa-red:#a3181c; --sa-hp:#b4191d; --sa-armor:#e1e1e1; --sa-cash:#36882c;
+  --sa-star:#c39a45; --sa-yellow:#e8d36a;
   --price:"Pricedown Bl","Pricedown",Impact,"Arial Narrow Bold",sans-serif;
   --ui:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
   --il:env(safe-area-inset-left,0px); --ir:env(safe-area-inset-right,0px); --it:env(safe-area-inset-top,0px); --ib:env(safe-area-inset-bottom,0px);
@@ -23,7 +25,7 @@
 html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;overscroll-behavior:none;font-family:var(--ui);color:#fff}
 [hidden]{display:none!important}
 .price{font-family:var(--price);font-weight:900}
-.out{text-shadow:-.25cqmin -.25cqmin 0 #000,.25cqmin -.25cqmin 0 #000,-.25cqmin .25cqmin 0 #000,.25cqmin .25cqmin 0 #000,0 .4cqmin .6cqmin rgba(0,0,0,.6)}
+.out{text-shadow:-.3cqmin -.3cqmin 0 #000,.3cqmin -.3cqmin 0 #000,-.3cqmin .3cqmin 0 #000,.3cqmin .3cqmin 0 #000,0 .3cqmin 0 #000,.3cqmin 0 0 #000}
 
 /* ---------- stage: the recorded frame. AUTO fills the screen; 9:16 / 16:9 letterbox a fixed shape ---------- */
 #stage{position:fixed;inset:0;container:stage/size;overflow:hidden;background:#111}
@@ -32,65 +34,65 @@ body[data-frame="9:16"] #stage{width:min(100vw,calc(100vh*9/16));height:min(100v
 body[data-frame="16:9"] #stage{width:min(100vw,calc(100vh*16/9));height:min(100vh,calc(100vw*9/16))}
 #cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#111;transition:filter 1s}
 #cam.mirror{transform:scaleX(-1)}
-body.wasted #cam{filter:grayscale(1) contrast(1.1) brightness(.8) blur(.15cqmin)}
+body.wasted #cam{filter:grayscale(1) contrast(1.1) brightness(.75)}
 
-/* ---------- HUD (GTA V layout) ---------- */
+/* ---------- San Andreas HUD ---------- */
 .hudpart{transition:opacity .3s}
 body.nohud .hudpart{opacity:0}
-#radar{position:fixed;left:calc(4cqmin + var(--il));bottom:40cqmin;width:30cqmin;pointer-events:none}
-.map{position:relative;height:19cqmin;overflow:hidden;border-radius:.6cqmin;opacity:.92;
+/* round radar, bottom-left */
+#radar{position:fixed;left:calc(4cqmin + var(--il));bottom:38cqmin;width:24cqmin;height:24cqmin;border-radius:50%;pointer-events:none;
+  border:.9cqmin solid #111;box-shadow:0 0 0 .3cqmin rgba(255,255,255,.25);overflow:hidden;
   background:
-    linear-gradient(32deg,transparent 46%,#a7a9a3 46.5% 49.5%,transparent 50%),
-    linear-gradient(-58deg,transparent 30%,#8e908b 30.4% 32.6%,transparent 33%),
-    linear-gradient(90deg,transparent 70%,#8e908b 70.3% 72%,transparent 72.3%),
-    radial-gradient(ellipse at 18% 80%,#6f8f6a 0 4cqmin,transparent 4.3cqmin),
-    radial-gradient(ellipse at 85% 15%,#5b86a8 0 5cqmin,transparent 5.3cqmin),#d3d1c7}
-.map::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 2cqmin rgba(0,0,0,.35)}
-.player{position:absolute;left:50%;top:55%;width:0;height:0;margin:-1.6cqmin 0 0 -1.1cqmin;border-left:1.1cqmin solid transparent;
-  border-right:1.1cqmin solid transparent;border-bottom:3.2cqmin solid #f2f2f2;filter:drop-shadow(0 0 .3cqmin #000);transform-origin:50% 55%;transition:transform .15s}
-.blipY{position:absolute;right:22%;top:20%;width:2.6cqmin;height:2.6cqmin;border-radius:50%;background:var(--yellow);border:.35cqmin solid #000}
-.bars{display:flex;gap:.5cqmin;height:1.3cqmin;margin-top:.5cqmin}
-.bar{flex:1;background:rgba(0,0,0,.55)}.bar i{display:block;height:100%;transition:width .6s}
-#hp{background:var(--hp);width:85%}#ar{background:var(--armor);width:60%}
-#topright{position:fixed;top:calc(4cqmin + var(--it));right:calc(4cqmin + var(--ir));display:flex;flex-direction:column;align-items:flex-end;gap:.6cqmin;pointer-events:none}
-.stars{display:flex;gap:.6cqmin}
-.stars svg{width:4.6cqmin;height:4.6cqmin}
-.stars svg path{fill:rgba(255,255,255,.18);stroke:#000;stroke-width:1.4;stroke-linejoin:round}
-.stars svg.lit path{fill:#fff;animation:flash .5s steps(2) infinite}
-@keyframes flash{50%{fill:#9ec5ff}}
-.money{font-size:6.4cqmin;line-height:1}
-.gain{font-size:4.4cqmin;line-height:1;color:var(--cash);opacity:0;transition:opacity .3s}
-.gain.show{opacity:1}
-#help{position:fixed;top:calc(4cqmin + var(--it));left:calc(4cqmin + var(--il));max-width:48cqmin;padding:1.6cqmin 2cqmin;background:rgba(0,0,0,.78);
-  font-size:2.7cqmin;line-height:1.45;border-radius:.3cqmin;pointer-events:none;opacity:0;transition:opacity .15s}
+    linear-gradient(28deg,transparent 46%,#8a8a80 46.5% 50%,transparent 50.5%),
+    linear-gradient(-62deg,transparent 30%,#7c7c73 30.5% 33.5%,transparent 34%),
+    radial-gradient(circle at 25% 75%,#4f7a3c 0 5cqmin,transparent 5.3cqmin),
+    radial-gradient(circle at 80% 20%,#3f6f99 0 5cqmin,transparent 5.3cqmin),#b9b39a}
+.radarN{position:absolute;left:50%;top:.6cqmin;transform:translateX(-50%);font:700 2.6cqmin/1 var(--ui);color:#fff;
+  text-shadow:0 0 .3cqmin #000,0 0 .3cqmin #000}
+.player{position:absolute;left:50%;top:50%;width:0;height:0;margin:-1.6cqmin 0 0 -1.1cqmin;border-left:1.1cqmin solid transparent;
+  border-right:1.1cqmin solid transparent;border-bottom:3.2cqmin solid #fff;filter:drop-shadow(0 0 .3cqmin #000);transform-origin:50% 55%;transition:transform .15s}
+.blipY{position:absolute;right:24%;top:24%;width:2.4cqmin;height:2.4cqmin;background:var(--sa-yellow);border:.35cqmin solid #000}
+/* top-right block: fist, clock, armour, health, money, 6 stars */
+#topright{position:fixed;top:calc(3cqmin + var(--it));right:calc(4cqmin + var(--ir));display:flex;gap:1.4cqmin;align-items:flex-start;pointer-events:none}
+.fist{width:11cqmin;height:11cqmin;display:flex;align-items:center;justify-content:center;font-size:7.5cqmin;line-height:1;
+  background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%)}
+.stats{display:flex;flex-direction:column;align-items:flex-end;gap:.7cqmin}
+.clock{font-size:5.2cqmin;line-height:1;color:#e6e6e6}
+.sabar{width:20cqmin;height:2cqmin;border:.35cqmin solid #000;background:#3a0b0c}
+.sabar i{display:block;height:100%;transition:width .6s}
+.sabar.armor{background:#4a4a4a}.sabar.armor i{background:var(--sa-armor);width:70%}
+.sabar.hp i{background:var(--sa-hp);width:90%}
+.money{font-size:5.6cqmin;line-height:1;color:var(--sa-cash);letter-spacing:.2cqmin}
+.stars{display:flex;gap:.3cqmin}
+.stars svg{width:3.6cqmin;height:3.6cqmin}
+.stars svg path{fill:rgba(0,0,0,.35);stroke:#000;stroke-width:1.6;stroke-linejoin:round}
+.stars svg.lit path{fill:var(--sa-star);animation:flash .6s steps(2) infinite}
+@keyframes flash{50%{fill:#7d5f22}}
+/* help box, top-left */
+#help{position:fixed;top:calc(3cqmin + var(--it));left:calc(4cqmin + var(--il));max-width:46cqmin;padding:1.6cqmin 2cqmin;background:rgba(0,0,0,.72);
+  font-size:2.7cqmin;line-height:1.45;border-radius:.6cqmin;pointer-events:none;opacity:0;transition:opacity .15s}
 #help.show{opacity:1}
 .key{display:inline-flex;align-items:center;justify-content:center;width:3.4cqmin;height:3.4cqmin;border-radius:50%;
   font-weight:800;font-size:2.1cqmin;color:#111;vertical-align:-.7cqmin;margin:0 .3cqmin}
-#feed{position:fixed;left:calc(4cqmin + var(--il));bottom:63cqmin;width:42cqmin;display:flex;gap:1.4cqmin;padding:1.4cqmin;background:rgba(0,0,0,.78);
-  border-radius:.3cqmin;pointer-events:none;transform:translateX(-120%);opacity:0;transition:transform .25s ease-out,opacity .25s}
-#feed.show{transform:none;opacity:1}
-.avatar{flex:none;width:7.5cqmin;height:7.5cqmin;display:flex;align-items:center;justify-content:center;font-size:5cqmin;background:#2f6b3a}
-.feedtext{min-width:0;font-size:2.5cqmin;line-height:1.35}
-.feedtext b{display:block;font-size:2.7cqmin}
-.feedtext small{display:block;color:#bbb;font-size:2.1cqmin}
 
 #pops{position:fixed;left:0;right:0;top:24%;height:0;display:flex;justify-content:center;pointer-events:none}
 .pop{position:absolute;white-space:nowrap;font-size:11cqmin;line-height:1.1;animation:rise .9s ease-out forwards}
 @keyframes rise{0%{transform:translateY(2cqmin) scale(.8);opacity:0}15%{transform:scale(1.05);opacity:1}70%{opacity:1}100%{transform:translateY(-8cqmin);opacity:0}}
-#sub{position:fixed;left:50%;bottom:37cqmin;transform:translateX(-50%);width:max-content;max-width:70vw;text-align:center;
-  font-size:3.6cqmin;font-weight:600;line-height:1.3;pointer-events:none;opacity:0;transition:opacity .2s}
+/* subtitles: white with black outline, coloured keywords like SA objectives */
+#sub{position:fixed;left:50%;bottom:36cqmin;transform:translateX(-50%);width:max-content;max-width:70cqw;text-align:center;
+  font-size:3.6cqmin;font-weight:700;line-height:1.3;pointer-events:none;opacity:0;transition:opacity .2s}
 #sub.show{opacity:1}
-#sub .y{color:var(--yellow)}
-#banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;
-  background:linear-gradient(transparent 36%,rgba(0,0,0,.62) 41% 59%,transparent 64%)}
+#sub .y{color:var(--sa-yellow)}
+/* big text: no band in SA, just outlined text */
+#banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0}
 #banner.show{animation:ban var(--dur,4.5s) ease forwards}
 @keyframes ban{0%{opacity:0}6%{opacity:1}88%{opacity:1}100%{opacity:0}}
-#bt{font-size:16cqmin;line-height:1;white-space:nowrap;text-align:center}
-#bs{font-size:4cqmin;font-weight:600;margin-top:.6cqmin;text-align:center}
-#banner.passed #bt{color:var(--gold)}
-#banner.wasted #bt{color:var(--red)}
-#banner.title{background:none}
-#banner.title #bt{font-size:13cqmin}
+#bt{font-size:14cqmin;line-height:1;white-space:nowrap;text-align:center}
+#bs{font-size:7cqmin;line-height:1;white-space:nowrap;text-align:center;margin-top:1cqmin}
+#banner.passed #bt{color:var(--sa-gold)}
+#banner.passed #bs{color:#fff}
+#banner.wasted #bt{color:var(--sa-red)}
+#banner.title #bt{color:var(--sa-gold);font-size:11cqmin}
 #count{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:32cqmin}
 
 /* ---------- controller (the joke; not part of the game HUD) ---------- */
@@ -124,49 +126,49 @@ body.nohud .hudpart{opacity:0}
 
 /* ---------- top tools (hidden while a take is recording) ---------- */
 .tools{position:fixed;top:calc(3cqmin + var(--it));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:1.6cqmin;
-  width:max-content;max-width:60vw;transition:opacity .3s;z-index:3}
+  width:max-content;max-width:56cqw;transition:opacity .3s;z-index:3}
 .tools button{font:600 2.6cqmin/1 var(--ui);letter-spacing:.15cqmin;color:#fff;background:rgba(0,0,0,.6);border:.3cqmin solid rgba(255,255,255,.35);border-radius:4cqmin;padding:1.3cqmin 2.4cqmin}
 body:not(.vmode) .vonly{display:none}
 body.vmode #flip{display:none}
 body.playing .tools{opacity:0}
 
-/* ---------- start screen ---------- */
+/* ---------- start screen (outside the stage, sized by the screen) ---------- */
 #start{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3cqmin;text-align:center;padding:4cqmin calc(6cqmin + var(--ir)) 4cqmin calc(6cqmin + var(--il));overflow-y:auto}
-#start h1{margin:0;font-size:12cqmin;line-height:1;color:var(--gold);font-weight:900}
-#start p{margin:0;font-size:3.4cqmin;max-width:60ch;color:#ddd;line-height:1.5}
-.choices{display:flex;flex-wrap:wrap;justify-content:center;gap:3cqmin}
-.choice{font-family:var(--price);font-weight:900;font-size:6cqmin;color:#111;border:0;border-radius:1cqmin;padding:1.6cqmin 6cqmin;cursor:pointer;background:var(--gold)}
+  gap:3vmin;text-align:center;padding:4vmin calc(6vmin + var(--ir)) 4vmin calc(6vmin + var(--il));overflow-y:auto}
+#start h1{margin:0;font-size:12vmin;line-height:1;color:var(--sa-gold);font-weight:900}
+#start p{margin:0;font-size:3.4vmin;max-width:60ch;color:#ddd;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;justify-content:center;gap:3vmin}
+.choice{font-family:var(--price);font-weight:900;font-size:6vmin;color:#111;border:0;border-radius:1vmin;padding:1.6vmin 6vmin;cursor:pointer;background:var(--sa-gold)}
 .choice.alt{background:#ddd}
-#disclaimer{font-size:2.8cqmin;color:#ff9a8a;max-width:60ch;line-height:1.5}
-#err{color:#ff8a8a;font-size:3.2cqmin;max-width:60ch}
+#disclaimer{font-size:2.8vmin;color:#ff9a8a;max-width:60ch;line-height:1.5}
+#err{color:#ff8a8a;font-size:3.2vmin;max-width:60ch}
 
-/* ---------- 9:16 phone, kept clear of Instagram's top bar, caption and side buttons ---------- */
+/* ---------- portrait frame: controller sits at the bottom, centred, so it stays off the climber ---------- */
 @container stage (orientation:portrait){
-  #topright{top:19cqh;right:5cqmin}
-  #help{top:19cqh;left:5cqmin;max-width:58cqmin;font-size:3.1cqmin}
+  #topright{top:calc(9cqmin + var(--it));right:5cqmin}
+  #help{top:calc(9cqmin + var(--it));left:5cqmin;max-width:44cqmin;font-size:3.1cqmin}
   .key{width:3.8cqmin;height:3.8cqmin;font-size:2.4cqmin}
-  #stick{left:5cqmin;bottom:28cqh;width:26cqmin;height:26cqmin}
+  #stick{left:7cqmin;bottom:calc(3cqh + var(--ib));width:26cqmin;height:26cqmin}
   #knob{width:12cqmin;height:12cqmin;margin:-6cqmin 0 0 -6cqmin}
-  #dpad{left:34cqmin;bottom:calc(28cqh + 3cqmin);width:20cqmin;height:20cqmin}
-  #face{right:14cqmin;bottom:28cqh;width:29cqmin;height:29cqmin}
+  #dpad{left:40cqmin;bottom:calc(3cqh + 3cqmin + var(--ib));width:20cqmin;height:20cqmin}
+  #face{right:7cqmin;bottom:calc(3cqh + var(--ib));width:29cqmin;height:29cqmin}
   .fb{width:10.5cqmin;height:10.5cqmin;font-size:4.8cqmin}
   .fb[data-k=Y],.fb[data-k=A]{left:9.25cqmin}
   .fb[data-k=X],.fb[data-k=B]{top:9.25cqmin}
   .sh{width:14cqmin;height:7.5cqmin;font-size:3.4cqmin}
-  #L{left:5cqmin;bottom:calc(28cqh + 30cqmin)}
-  #R{right:14cqmin;bottom:calc(28cqh + 30cqmin)}
-  .mid{left:44cqmin;bottom:calc(28cqh + 31cqmin)}
-  .pill{width:10cqmin;font-size:2.2cqmin;padding:1.4cqmin 0}
-  #radar{left:5cqmin;bottom:calc(28cqh + 42cqmin)}
-  #feed{left:38cqmin;bottom:calc(28cqh + 42cqmin);width:48cqmin;transform:translateX(-160%)}
-  #feed.show{transform:none}
-  #sub{bottom:calc(28cqh + 66cqmin);max-width:86vw;font-size:4.2cqmin}
-  #pops{top:30cqh}
-  #bt{font-size:12cqmin}
+  #L{left:7cqmin;bottom:calc(3cqh + 31cqmin + var(--ib))}
+  #R{right:7cqmin;bottom:calc(3cqh + 31cqmin + var(--ib))}
+  .mid{bottom:calc(3cqh + 31cqmin + var(--ib))}
+  .pill{width:11cqmin;font-size:2.4cqmin;padding:1.6cqmin 0}
+  #radar{left:6cqmin;bottom:calc(3cqh + 42cqmin + var(--ib));width:26cqmin;height:26cqmin}
+  #sub{bottom:calc(3cqh + 72cqmin + var(--ib));max-width:88cqw;font-size:4.4cqmin}
+  #pops{top:22cqh}
+  /* big text sits in the upper third so it never collides with subtitles */
+  #banner{justify-content:flex-start;padding-top:30cqh}
+  #bt{font-size:13cqmin}
+  #bs{font-size:7cqmin}
   #banner.title #bt{font-size:11cqmin}
-  #bs{font-size:4.4cqmin}
-  .tools{top:calc(3cqh + var(--it));max-width:92vw}
+  .tools{top:calc(2cqh + var(--it));max-width:92cqw}
   .tools button{font-size:3cqmin}
 }
 @media (prefers-reduced-motion:reduce){.stars svg.lit path{animation:none}}
@@ -176,22 +178,22 @@ body.playing .tools{opacity:0}
 <div id="stage">
 <video id="cam" autoplay muted playsinline></video>
 
-<div id="radar" class="hudpart">
-  <div class="map"><div class="blipY"></div><div class="player" id="blip"></div></div>
-  <div class="bars"><div class="bar"><i id="hp"></i></div><div class="bar"><i id="ar"></i></div></div>
-</div>
+<div id="radar" class="hudpart"><div class="radarN">N</div><div class="blipY"></div><div class="player" id="blip"></div></div>
 <div id="topright" class="hudpart">
-  <div class="stars" id="stars"></div>
-  <div class="money price out" id="money">$0</div>
-  <div class="gain price out" id="gain">+$0</div>
+  <div class="fist" aria-hidden="true">👊</div>
+  <div class="stats">
+    <div class="clock price out" id="clock">12:00</div>
+    <div class="sabar armor"><i></i></div>
+    <div class="sabar hp"><i id="hp"></i></div>
+    <div class="money price out" id="money">$00000000</div>
+    <div class="stars" id="stars"></div>
+  </div>
 </div>
 <div id="help" class="hudpart"></div>
-<div id="feed" class="hudpart"><div class="avatar price" id="av">C</div>
-  <div class="feedtext"><b id="fname">Climber</b><small>Text message</small><span id="fmsg"></span></div></div>
 
 <div id="pops"></div>
 <div id="sub" class="out hudpart"></div>
-<div id="banner"><div id="bt" class="price out"></div><div id="bs" class="out"></div></div>
+<div id="banner"><div id="bt" class="price out"></div><div id="bs" class="price out"></div></div>
 <div id="count" class="price out" hidden></div>
 
 <div class="tools">
@@ -225,7 +227,7 @@ body.playing .tools{opacity:0}
   <h1 class="price out">climb controller</h1>
   <p>Film the climb with your normal camera first. Then tap <b>USE A VIDEO</b>, start screen recording,
      tap <b>3-2-1 PLAY</b> and press buttons along with the clip.<br>
-     START = mission passed. Hold B = wasted. SELECT = text message.</p>
+     START = mission passed. Hold B = wasted. SELECT = "here we go again".</p>
   <div class="choices">
     <label class="choice">USE A VIDEO<input id="file" type="file" accept="video/*" hidden></label>
     <button id="go" class="choice alt" type="button">LIVE CAMERA</button>
@@ -241,13 +243,13 @@ const $ = s => document.querySelector(s);
 const cam = $('#cam');
 let facing = 'environment', stream = null, videoMode = false;
 
-/* ---- sounds: loaded from myinstants.com at runtime, not stored in this repo ---- */
+/* ---- sounds: GTA San Andreas, loaded from myinstants.com at runtime, not stored in this repo ---- */
 const SND_BASE = 'https://www.myinstants.com/media/sounds/';
 const SOUNDS = {
-  wasted: 'gta-v-wasted-death-sound.mp3',
-  passed: 'gta-sa-mission-passed-theme.mp3', // GTA San Andreas theme, ~9 s
-  text: 'gta-v-notification.mp3',
-  blip: 'gta-v-notification-better-version_WAYpogU.mp3',
+  passed: 'gta-sa-mission-passed-theme.mp3',                          // mission passed / respect +
+  train: 'all-we-had-to-do-was-follow-the-damn-train-cj_dTotjkJ.mp3', // Big Smoke, plays on wasted
+  again: 'gta-san-andreas-ah-shit-here-we-go-again.mp3',              // CJ
+  blip: 'gta-sa-menu.mp3',                                            // help box beep
 };
 const audio = {};
 for (const [k, f] of Object.entries(SOUNDS)) { const a = new Audio(SND_BASE + f); a.preload = 'auto'; audio[k] = a; }
@@ -257,7 +259,7 @@ function play(k) {
   const a = audio[k]; if (!a) return;
   try { a.currentTime = 0; a.play().catch(() => {}); } catch (e) {}
 }
-function click() { // short UI click for button presses (the game's button sounds aren't available)
+function click() { // short UI click for button presses
   if (!ac || !soundOn) return;
   const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
   o.type = 'triangle'; o.frequency.value = 900;
@@ -283,29 +285,32 @@ async function startCam() {
 }
 
 /* ---- HUD state ---- */
-let cash = 0, shown = 0, heat = 0, gainT;
+let cash = 0, shown = 0, heat = 0;
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 1.8l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.6l-6.3 3.6 1.5-7.1L1.8 9.2 9 8.4z"/></svg>';
-$('#stars').innerHTML = STAR.repeat(5);
+$('#stars').innerHTML = STAR.repeat(6); // San Andreas has six wanted stars
 function renderStars() {
-  const n = Math.min(5, Math.floor(heat / 4));
+  const n = Math.min(6, Math.floor(heat / 4));
   document.querySelectorAll('#stars svg').forEach((s, i) => s.classList.toggle('lit', i < n));
 }
 setInterval(() => { if (heat > 0) { heat--; renderStars(); } }, 1500);
-function addCash(n) {
-  cash += n;
-  const g = $('#gain'); g.textContent = '+$' + n.toLocaleString('en-US'); g.classList.add('show');
-  clearTimeout(gainT); gainT = setTimeout(() => g.classList.remove('show'), 1200);
-}
+const fmtCash = n => '$' + String(n).padStart(8, '0');
+function addCash(n) { cash += n; }
 (function tick() {
-  if (shown !== cash) { shown += Math.ceil((cash - shown) / 6); $('#money').textContent = '$' + shown.toLocaleString('en-US'); }
+  if (shown !== cash) { shown += Math.ceil((cash - shown) / 6); $('#money').textContent = fmtCash(shown); }
   requestAnimationFrame(tick);
 })();
+// in-game clock: one game minute per real second, like SA
+let gameMin = 12 * 60;
+setInterval(() => {
+  gameMin = (gameMin + 1) % 1440;
+  $('#clock').textContent = String(Math.floor(gameMin / 60)).padStart(2, '0') + ':' + String(gameMin % 60).padStart(2, '0');
+}, 1000);
 function resetHud() {
-  cash = shown = 0; $('#money').textContent = '$0'; heat = 0; renderStars();
-  $('#hp').style.width = '85%'; document.body.classList.remove('wasted');
+  cash = shown = 0; $('#money').textContent = fmtCash(0); heat = 0; renderStars();
+  $('#hp').style.width = '90%'; document.body.classList.remove('wasted');
 }
 
-/* ---- GTA-style messages ---- */
+/* ---- messages ---- */
 const KEYC = { A: 'var(--A)', B: 'var(--B)', X: 'var(--X)', Y: 'var(--Y)', L: '#ddd', R: '#ddd' };
 let helpT;
 function help(text, ms = 4000) {
@@ -330,19 +335,6 @@ function subtitle(text, ms = 3000) {
   s.classList.add('show');
   clearTimeout(subT); subT = setTimeout(() => s.classList.remove('show'), ms);
 }
-const TEXTS = [
-  ['Climber', 'Bro, who is controlling me??'],
-  ['Climber', "Next time I'm holding the controller."],
-  ['Belayer', 'I got you. Probably.'],
-  ['Climber', 'Stop pressing random buttons.'],
-];
-let textI = 0, feedT;
-function textMessage() {
-  const [who, msg] = TEXTS[textI++ % TEXTS.length];
-  $('#av').textContent = who[0]; $('#fname').textContent = who; $('#fmsg').textContent = msg;
-  $('#feed').classList.add('show'); play('text'); buzz([30, 60, 30]);
-  clearTimeout(feedT); feedT = setTimeout(() => $('#feed').classList.remove('show'), 4500);
-}
 const LINES = [
   'Which hold? THAT one?', 'Left hand. No, your other left.', 'My forearms are filing a complaint.',
   'Who gave you this much power?', 'This was not in the tutorial.', 'Bro, the lag is on your end.',
@@ -353,7 +345,6 @@ function pop(text, color = '#fff') {
   const box = $('#pops'); while (box.children.length > 2) box.firstChild.remove();
   box.appendChild(p); p.addEventListener('animationend', () => p.remove());
 }
-let banT;
 function banner(kind, title, sub, dur = 4.5) {
   const b = $('#banner'); b.className = ''; void b.offsetWidth;
   b.style.setProperty('--dur', dur + 's');
@@ -368,7 +359,7 @@ const ACTS = {
 };
 function action(k) {
   if (k === 'START') return passed();
-  if (k === 'SELECT') return textMessage();
+  if (k === 'SELECT') return hereWeGoAgain();
   const a = ACTS[k]; if (!a) return;
   pop(a[0], a[1]); click(); buzz(15);
   addCash(50 + Math.floor(Math.random() * 450));
@@ -377,17 +368,22 @@ function action(k) {
 }
 function passed() {
   document.body.classList.remove('wasted');
-  banner('passed', 'mission passed', 'Send It', 6);
+  banner('passed', 'mission passed!', 'respect +', 6);
   play('passed'); buzz([40, 60, 40]);
   addCash(5000); heat = 0; renderStars(); $('#hp').style.width = '100%';
+}
+function hereWeGoAgain() {
+  play('again'); buzz(30);
+  subtitle('Ah shit, here we go again.', 3200);
 }
 let wastedT;
 function wasted() {
   document.body.classList.add('wasted');
   $('#hp').style.width = '0%';
-  play('wasted'); buzz(400);
-  if (videoMode && !cam.paused) cam.playbackRate = .35; // GTA's slow-motion death
-  setTimeout(() => banner('wasted', 'wasted', '', 5.4), 600);
+  buzz(400);
+  if (videoMode && !cam.paused) cam.playbackRate = .35; // slow-motion death
+  setTimeout(() => banner('wasted', 'wasted', '', 5), 500);
+  setTimeout(() => { play('train'); subtitle('All you had to do was follow the damn {train}, CJ!', 4000); }, 1400);
   clearTimeout(wastedT);
   wastedT = setTimeout(() => { document.body.classList.remove('wasted'); cam.playbackRate = rate; }, 6000);
 }
@@ -447,7 +443,7 @@ async function keepAwake() { try { wake = await navigator.wakeLock?.request('scr
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
 async function boot() {
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-  // Unlock the HTML audio elements on this first tap so later sounds can play.
+  // Unlock the audio elements on this first tap so later sounds can play.
   for (const a of Object.values(audio)) { a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); }
   try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (e) {}
   keepAwake();

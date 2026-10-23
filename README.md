@@ -4,7 +4,7 @@ Turn a climbing video into a "someone is controlling the climber" game clip.
 Play your clip behind an on-screen controller, press buttons along with it, and screen record.
 
 - **Original version:** https://lai2570.github.io/climb-controller/
-- **GTA 5 parody version:** https://lai2570.github.io/climb-controller/gta/
+- **GTA San Andreas parody version:** https://lai2570.github.io/climb-controller/gta/
 
 ## How to use
 
@@ -16,13 +16,13 @@ Play your clip behind an on-screen controller, press buttons along with it, and 
 
 **SPEED 0.5x** plays the clip at half speed so the timing is easier. Speed the recording up 2x afterwards.
 
-## ⚠️ About the GTA 5 version
+## ⚠️ About the GTA version
 
-**This version looks and sounds very close to GTA 5. It is a fan-made parody for entertainment only. Do not use it for commercial purposes.**
+**This version looks and sounds very close to GTA San Andreas. It is a fan-made parody for entertainment only. Do not use it for commercial purposes.**
 
-**此版本的外觀與音效高度仿照 GTA 5，是粉絲自製的惡搞作品，僅供娛樂使用，請勿用於商業用途。**
+**此版本的外觀與音效高度仿照 GTA San Andreas，是粉絲自製的惡搞作品，僅供娛樂使用，請勿用於商業用途。**
 
-- The mission passed sound is the GTA San Andreas theme; the other sounds and the HUD style follow GTA 5.
+- Sounds: the San Andreas mission passed theme, plus the "Ah shit, here we go again" and "follow the damn train" lines.
 - Grand Theft Auto, GTA and all related sounds and designs belong to Rockstar Games and Take-Two Interactive.
   This project is not affiliated with or endorsed by them.
 - The game sounds and the Pricedown font are **not stored in this repository**. The page loads them at runtime from
