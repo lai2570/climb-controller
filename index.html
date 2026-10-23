@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Climb Controller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+:root{
+  --A:#3ddc84; --B:#ff4d4d; --X:#3b8cff; --Y:#ffc928;
+  --glass:rgba(16,16,20,.38); --line:rgba(255,255,255,.6);
+  --money:#79e28f; --gold:#f5b82e; --red:#c8102e;
+  --display:"Anton","Impact","Arial Narrow Bold",sans-serif;
+  --il:env(safe-area-inset-left,0px); --ir:env(safe-area-inset-right,0px);
+  --it:env(safe-area-inset-top,0px); --ib:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;overscroll-behavior:none;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+.ts{text-shadow:0 0 .4vmin #000,0 .3vmin .8vmin rgba(0,0,0,.8)}
+
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#111;transition:filter 1.2s}
+#cam.mirror{transform:scaleX(-1)}
+#tint{position:fixed;inset:0;background:rgba(110,0,0,.28);opacity:0;transition:opacity 1.2s;pointer-events:none}
+body.wasted #cam{filter:grayscale(1) contrast(1.15) brightness(.75)}
+body.wasted #tint{opacity:1}
+
+/* HUD */
+.hud{position:fixed;top:calc(3vmin + var(--it));left:calc(4vmin + var(--il));right:calc(4vmin + var(--ir));
+  display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;transition:opacity .3s}
+body.nohud .hud,body.nohud .sub{opacity:0}
+.mapwrap{display:flex;flex-direction:column;gap:.8vmin;width:26vmin}
+.map{position:relative;height:17vmin;border-radius:1.6vmin;overflow:hidden;border:.4vmin solid rgba(0,0,0,.6);
+  background:
+    repeating-linear-gradient(90deg,transparent 0 5vmin,rgba(255,255,255,.18) 5vmin 5.6vmin),
+    repeating-linear-gradient(0deg,transparent 0 4vmin,rgba(255,255,255,.18) 4vmin 4.6vmin),
+    radial-gradient(circle at 70% 30%,#3f6b4a 0 3vmin,transparent 3.2vmin),
+    #2b3440}
+.blip{position:absolute;left:50%;top:50%;width:0;height:0;margin:-1.6vmin 0 0 -1.1vmin;
+  border-left:1.1vmin solid transparent;border-right:1.1vmin solid transparent;border-bottom:3vmin solid #fff;
+  filter:drop-shadow(0 0 .4vmin #000);transform-origin:50% 55%;transition:transform .15s}
+.wp{position:absolute;right:18%;top:14%;width:2.2vmin;height:2.2vmin;border-radius:50%;background:var(--Y);border:.3vmin solid #000}
+.bars{display:flex;gap:.6vmin;height:1.4vmin}
+.bar{flex:1;background:rgba(0,0,0,.55);overflow:hidden}
+.bar i{display:block;height:100%;transition:width .5s}
+#hp{background:#57b35f;width:100%}
+#ar{background:#4aa3df;width:70%}
+.stats{display:flex;flex-direction:column;align-items:flex-end;gap:.4vmin}
+.stars{font-size:5vmin;letter-spacing:.3vmin;line-height:1}
+.stars span{color:rgba(255,255,255,.22)}
+.stars span.lit{color:#fff;animation:flash .5s steps(2) infinite}
+@keyframes flash{50%{color:#ff5a5a}}
+.money{font-family:var(--display);font-size:7.5vmin;line-height:1;color:var(--money);
+  -webkit-text-stroke:.25vmin #0b2010;font-variant-numeric:tabular-nums}
+.gain{font-family:var(--display);font-size:4vmin;color:var(--money);opacity:0;transition:opacity .3s}
+.gain.show{opacity:1}
+
+.tools{position:fixed;top:calc(3vmin + var(--it));left:50%;transform:translateX(-50%);display:flex;gap:2vmin}
+.tools button{font:600 2.8vmin/1 system-ui,sans-serif;letter-spacing:.2vmin;color:#fff;background:var(--glass);
+  border:.3vmin solid rgba(255,255,255,.35);border-radius:4vmin;padding:1.4vmin 2.6vmin}
+.tools button:focus-visible,.pill:focus-visible{outline:.4vmin solid var(--Y)}
+
+/* Controller */
+.pad{position:fixed;touch-action:none}
+#stick{left:calc(5vmin + var(--il));bottom:calc(5vmin + var(--ib));width:30vmin;height:30vmin;border-radius:50%;
+  background:var(--glass);border:.5vmin solid var(--line);box-shadow:inset 0 0 3vmin rgba(0,0,0,.5)}
+#knob{position:absolute;left:50%;top:50%;width:14vmin;height:14vmin;margin:-7vmin 0 0 -7vmin;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#f2f2f2,#9a9aa2 60%,#5c5c66);box-shadow:0 1vmin 2vmin rgba(0,0,0,.6);pointer-events:none}
+#knob::after{content:"";position:absolute;inset:3vmin;border-radius:50%;border:.4vmin solid rgba(0,0,0,.2)}
+
+#dpad{left:calc(39vmin + var(--il));bottom:calc(5vmin + var(--ib));width:24vmin;height:24vmin;
+  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr)}
+#dpad .d{background:rgba(16,16,20,.55);border:.4vmin solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-size:3.2vmin;color:rgba(255,255,255,.85)}
+#dpad .d.on{background:#fff;color:#111}
+#dpad .c{background:rgba(16,16,20,.55);border-block:.4vmin solid transparent}
+#dpad .u{grid-area:1/2;border-radius:1.2vmin 1.2vmin 0 0;border-bottom:0}
+#dpad .l{grid-area:2/1;border-radius:1.2vmin 0 0 1.2vmin;border-right:0}
+#dpad .c{grid-area:2/2}
+#dpad .r{grid-area:2/3;border-radius:0 1.2vmin 1.2vmin 0;border-left:0}
+#dpad .dn{grid-area:3/2;border-radius:0 0 1.2vmin 1.2vmin;border-top:0}
+
+#face{right:calc(5vmin + var(--ir));bottom:calc(5vmin + var(--ib));width:33vmin;height:33vmin}
+.fb{position:absolute;width:12vmin;height:12vmin;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font:700 5.5vmin/1 system-ui,sans-serif;color:var(--c);background:rgba(12,12,16,.55);border:.5vmin solid var(--c);
+  box-shadow:0 .8vmin 1.6vmin rgba(0,0,0,.45);transition:transform .06s}
+.fb.on{background:var(--c);color:#111;transform:scale(.9)}
+.fb[data-k=Y]{--c:var(--Y);left:10.5vmin;top:0}
+.fb[data-k=A]{--c:var(--A);left:10.5vmin;bottom:0}
+.fb[data-k=X]{--c:var(--X);left:0;top:10.5vmin}
+.fb[data-k=B]{--c:var(--B);right:0;top:10.5vmin}
+
+.sh{position:fixed;top:36%;width:17vmin;height:9vmin;display:flex;align-items:center;justify-content:center;
+  font:700 4vmin/1 system-ui,sans-serif;background:var(--glass);border:.5vmin solid var(--line);
+  border-radius:2.5vmin 2.5vmin 1vmin 1vmin}
+.sh.on{background:#fff;color:#111}
+#L{left:calc(5vmin + var(--il))}
+#R{right:calc(5vmin + var(--ir))}
+
+.mid{position:fixed;left:50%;bottom:calc(6vmin + var(--ib));transform:translateX(-50%);display:flex;gap:2vmin}
+.pill{font:700 2.6vmin/1 system-ui,sans-serif;letter-spacing:.3vmin;color:#fff;width:12vmin;padding:1.6vmin 0;
+  border-radius:3vmin;background:rgba(16,16,20,.55);border:.4vmin solid var(--line)}
+.pill.on{background:#fff;color:#111}
+
+/* Text effects */
+#pops{position:fixed;left:0;right:0;top:26%;height:0;pointer-events:none;display:flex;justify-content:center}
+.pop{position:absolute;font-family:var(--display);font-size:10vmin;letter-spacing:.3vmin;white-space:nowrap;
+  -webkit-text-stroke:.35vmin #000;animation:rise .9s ease-out forwards}
+@keyframes rise{0%{transform:translateY(2vmin) scale(.7);opacity:0}15%{transform:scale(1.08);opacity:1}
+  70%{opacity:1}100%{transform:translateY(-8vmin) scale(1);opacity:0}}
+.sub{position:fixed;left:50%;bottom:calc(40vmin + var(--ib));transform:translateX(-50%);width:max-content;max-width:78vw;
+  text-align:center;font-size:4vmin;line-height:1.3;opacity:0;transition:opacity .3s;pointer-events:none}
+.sub.show{opacity:1}
+.sub b{color:var(--Y)}
+#banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vmin;
+  pointer-events:none;opacity:0;background:linear-gradient(transparent 30%,rgba(0,0,0,.6) 42% 62%,transparent 74%)}
+#banner.show{animation:ban 4s ease forwards}
+@keyframes ban{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
+#bt{font-family:var(--display);font-size:15vmin;line-height:1;letter-spacing:.4vmin;-webkit-text-stroke:.4vmin #000}
+#bs{font-family:var(--display);font-size:5vmin;letter-spacing:.3vmin}
+#banner.passed #bt{color:var(--gold)}
+#banner.wasted #bt{color:var(--red)}
+#banner.mission #bt{color:#fff;font-size:10vmin}
+
+/* Start screen */
+#start{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3vmin;text-align:center;padding:4vmin calc(6vmin + var(--ir)) 4vmin calc(6vmin + var(--il))}
+#start h1{margin:0;font-family:var(--display);font-weight:400;font-size:12vmin;line-height:1;color:var(--gold);-webkit-text-stroke:.3vmin #000}
+#start p{margin:0;font-size:3.6vmin;max-width:60ch;color:#ddd;line-height:1.5}
+#go{font-family:var(--display);font-size:6vmin;letter-spacing:.4vmin;color:#111;background:var(--A);border:0;border-radius:2vmin;padding:2vmin 7vmin}
+#err{color:#ff8a8a;font-size:3.4vmin;max-width:60ch;line-height:1.5}
+
+@media (orientation:portrait){
+  #dpad{left:calc(5vmin + var(--il));bottom:calc(40vmin + var(--ib))}
+  .sub{bottom:calc(70vmin + var(--ib))}
+  .sh{top:46%}
+}
+@media (prefers-reduced-motion:reduce){.stars span.lit{animation:none}}
+</style>
+</head>
+<body>
+<video id="cam" autoplay muted playsinline></video>
+<div id="tint"></div>
+
+<div class="hud ts">
+  <div class="mapwrap">
+    <div class="map"><div class="wp"></div><div class="blip" id="blip"></div></div>
+    <div class="bars"><div class="bar"><i id="hp"></i></div><div class="bar"><i id="ar"></i></div></div>
+  </div>
+  <div class="stats">
+    <div class="stars" id="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+    <div class="money" id="money">$0</div>
+    <div class="gain" id="gain">+$0</div>
+  </div>
+</div>
+
+<div class="tools">
+  <button id="flip" type="button">FLIP CAM</button>
+  <button id="snd" type="button">SOUND ON</button>
+</div>
+
+<div id="pops"></div>
+<div class="sub ts" id="sub"></div>
+<div id="banner"><div id="bt"></div><div id="bs" class="ts"></div></div>
+
+<div class="sh pad btn ts" id="L" data-k="L">L</div>
+<div class="sh pad btn ts" id="R" data-k="R">R</div>
+
+<div class="pad" id="stick"><div id="knob"></div></div>
+
+<div class="pad" id="dpad">
+  <div class="d u btn" data-k="UP">▲</div>
+  <div class="d l btn" data-k="LEFT">◀</div>
+  <div class="c"></div>
+  <div class="d r btn" data-k="RIGHT">▶</div>
+  <div class="d dn btn" data-k="DOWN">▼</div>
+</div>
+
+<div class="pad" id="face">
+  <div class="fb btn" data-k="Y">Y</div>
+  <div class="fb btn" data-k="X">X</div>
+  <div class="fb btn" data-k="B">B</div>
+  <div class="fb btn" data-k="A">A</div>
+</div>
+
+<div class="mid">
+  <button class="pill btn" type="button" data-k="SELECT">SELECT</button>
+  <button class="pill btn" type="button" data-k="START">START</button>
+</div>
+
+<div id="start">
+  <h1>CLIMB CONTROLLER</h1>
+  <p>Point the back camera at your climber. Stick and D-pad move them, buttons do moves.
+     START = Mission Passed. Hold B = Wasted. SELECT hides the HUD.</p>
+  <button id="go" type="button">PRESS START</button>
+  <div id="err"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const cam = $('#cam');
+let facing = 'environment', stream = null;
+
+async function startCam() {
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    $('#err').textContent = 'Camera needs an https:// link. Open this page from an https address (not a file or http:// link).';
+    return false;
+  }
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+    });
+    cam.srcObject = stream;
+    await cam.play().catch(() => {});
+    cam.classList.toggle('mirror', facing === 'user');
+    return true;
+  } catch (e) {
+    $('#err').textContent = 'Camera blocked: ' + (e.name || e) + '. Allow camera access in the browser settings and reload.';
+    return false;
+  }
+}
+
+/* sound */
+let ac = null, soundOn = true;
+function tone(f, d = .06, type = 'square', v = .07, t0 = 0, f2) {
+  if (!ac || !soundOn) return;
+  const t = ac.currentTime + t0, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + d + .02);
+}
+const buzz = ms => { try { navigator.vibrate?.(ms); } catch (e) {} };
+
+/* money + wanted level */
+let cash = 0, shown = 0, heat = 0, gainT;
+function addCash(n) {
+  cash += n;
+  const g = $('#gain'); g.textContent = '+$' + n.toLocaleString('en-US'); g.classList.add('show');
+  clearTimeout(gainT); gainT = setTimeout(() => g.classList.remove('show'), 900);
+}
+(function tick() {
+  if (shown !== cash) { shown += Math.ceil((cash - shown) / 6); $('#money').textContent = '$' + shown.toLocaleString('en-US'); }
+  requestAnimationFrame(tick);
+})();
+function renderStars() {
+  const n = Math.min(5, Math.floor(heat / 4));
+  document.querySelectorAll('#stars span').forEach((s, i) => s.classList.toggle('lit', i < n));
+}
+setInterval(() => { if (heat > 0) { heat--; renderStars(); } }, 1500);
+
+/* text effects */
+function pop(text, color = '#fff') {
+  const p = document.createElement('div');
+  p.className = 'pop'; p.textContent = text; p.style.color = color;
+  const box = $('#pops');
+  while (box.children.length > 2) box.firstChild.remove();
+  box.appendChild(p); p.addEventListener('animationend', () => p.remove());
+}
+const lines = [
+  ['Climber', 'Which hold? THAT one?'],
+  ['You', 'Left hand. No, your other left.'],
+  ['Climber', 'My forearms are filing a complaint.'],
+  ['You', 'Trust the controller.'],
+  ['Climber', 'Who gave you this much power?'],
+  ['You', 'Press X to not fall.'],
+  ['Climber', 'This was not in the tutorial.'],
+  ['You', 'Bro, the lag is on your end.'],
+];
+let subT;
+function say() {
+  const [who, txt] = lines[Math.floor(Math.random() * lines.length)];
+  const s = $('#sub'); s.innerHTML = ''; const b = document.createElement('b'); b.textContent = who + ': ';
+  s.append(b, txt); s.classList.add('show');
+  clearTimeout(subT); subT = setTimeout(() => s.classList.remove('show'), 2600);
+}
+function banner(kind, title, sub) {
+  const b = $('#banner'); b.className = ''; void b.offsetWidth;
+  b.className = 'show ' + kind; $('#bt').textContent = title; $('#bs').textContent = sub || '';
+}
+
+/* actions */
+const acts = {
+  A: ['JUMP', '#3ddc84', 660], B: ['LET GO', '#ff4d4d', 300], X: ['GRAB HOLD', '#3b8cff', 520], Y: ['CHALK UP', '#ffc928', 780],
+  L: ['LOOK DOWN', '#fff', 440], R: ['DYNO!', '#ff9a3c', 880],
+  UP: ['REACH UP', '#fff', 600], DOWN: ['STEP DOWN', '#fff', 360], LEFT: ['TRAVERSE LEFT', '#fff', 480], RIGHT: ['TRAVERSE RIGHT', '#fff', 500],
+};
+function action(k) {
+  if (k === 'START') return passed();
+  if (k === 'SELECT') { document.body.classList.toggle('nohud'); tone(400, .05); return; }
+  const a = acts[k]; if (!a) return;
+  pop(a[0], a[1]); tone(a[2]); buzz(18);
+  addCash(50 + Math.floor(Math.random() * 450));
+  heat++; renderStars();
+  if (Math.random() < .3) say();
+}
+function passed() {
+  document.body.classList.remove('wasted');
+  $('#hp').style.width = '100%';
+  banner('passed', 'MISSION PASSED', 'RESPECT +');
+  addCash(5000); heat = 0; renderStars(); buzz([40, 60, 40]);
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, .25, 'triangle', .12, i * .14));
+}
+function wasted() {
+  document.body.classList.add('wasted');
+  $('#hp').style.width = '0%';
+  banner('wasted', 'WASTED', '');
+  buzz(400); tone(320, 1.4, 'sawtooth', .1, 0, 60);
+  setTimeout(() => document.body.classList.remove('wasted'), 4200);
+}
+
+/* buttons (multi-touch) */
+document.querySelectorAll('.btn').forEach(el => {
+  let holdT;
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault(); el.setPointerCapture?.(e.pointerId);
+    el.classList.add('on'); action(el.dataset.k);
+    if (el.dataset.k === 'B') holdT = setTimeout(wasted, 900);
+  });
+  const up = () => { el.classList.remove('on'); clearTimeout(holdT); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+});
+
+/* joystick */
+const stick = $('#stick'), knob = $('#knob'), blip = $('#blip');
+let sid = null, lastDir = null;
+function moveStick(e) {
+  const r = stick.getBoundingClientRect(), R = r.width / 2;
+  let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R);
+  const dist = Math.hypot(dx, dy), max = R * .62;
+  if (dist > max) { dx *= max / dist; dy *= max / dist; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  if (dist < R * .35) return;
+  const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+  blip.style.transform = `rotate(${ang + 90}deg)`;
+  const dir = ang > -135 && ang <= -45 ? 'UP' : ang > -45 && ang <= 45 ? 'RIGHT' : ang > 45 && ang <= 135 ? 'DOWN' : 'LEFT';
+  if (dir !== lastDir) {
+    lastDir = dir; pop('CLIMB ' + dir); tone(500 + Math.random() * 200, .04, 'triangle'); buzz(10);
+    addCash(20 + Math.floor(Math.random() * 80)); heat++; renderStars();
+  }
+}
+stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); sid = e.pointerId; moveStick(e); });
+stick.addEventListener('pointermove', e => { if (e.pointerId === sid) moveStick(e); });
+const release = e => { if (e.pointerId !== sid) return; sid = null; lastDir = null; knob.style.transform = ''; };
+stick.addEventListener('pointerup', release); stick.addEventListener('pointercancel', release);
+
+/* tools */
+$('#flip').addEventListener('click', () => { facing = facing === 'environment' ? 'user' : 'environment'; startCam(); });
+$('#snd').addEventListener('click', e => { soundOn = !soundOn; e.target.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; });
+
+/* start */
+let wake = null;
+async function keepAwake() { try { wake = await navigator.wakeLock?.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+$('#go').addEventListener('click', async () => {
+  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (e) {}
+  const ok = await startCam();
+  if (!ok) return;
+  $('#start').hidden = true;
+  keepAwake();
+  setTimeout(() => banner('mission', 'MISSION: SEND IT', 'Get the climber to the top'), 400);
+});
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+</script>
+</body>
+</html>
