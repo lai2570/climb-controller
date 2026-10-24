@@ -16,7 +16,7 @@
   --glass:rgba(16,16,20,.38); --line:rgba(255,255,255,.6);
   /* San Andreas HUD colours */
   --sa-gold:#e1a93a; --sa-red:#a3181c; --sa-hp:#b4191d; --sa-armor:#e1e1e1; --sa-cash:#36882c;
-  --sa-star:#c39a45; --sa-yellow:#e8d36a;
+  --sa-yellow:#e8d36a;
   --price:"Pricedown Bl","Pricedown",Impact,"Arial Narrow Bold",sans-serif;
   --ui:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
   --il:env(safe-area-inset-left,0px); --ir:env(safe-area-inset-right,0px); --it:env(safe-area-inset-top,0px); --ib:env(safe-area-inset-bottom,0px);
@@ -52,10 +52,8 @@ body.nohud .hudpart{opacity:0}
 .player{position:absolute;left:50%;top:50%;width:0;height:0;margin:-1.6cqmin 0 0 -1.1cqmin;border-left:1.1cqmin solid transparent;
   border-right:1.1cqmin solid transparent;border-bottom:3.2cqmin solid #fff;filter:drop-shadow(0 0 .3cqmin #000);transform-origin:50% 55%;transition:transform .15s}
 .blipY{position:absolute;right:24%;top:24%;width:2.4cqmin;height:2.4cqmin;background:var(--sa-yellow);border:.35cqmin solid #000}
-/* top-right block: fist, clock, armour, health, money, 6 stars */
+/* top-right block: clock, armour, health, money, forearm pump */
 #topright{position:fixed;top:calc(3cqmin + var(--it));right:calc(4cqmin + var(--ir));display:flex;gap:1.4cqmin;align-items:flex-start;pointer-events:none}
-.fist{width:11cqmin;height:11cqmin;display:flex;align-items:center;justify-content:center;font-size:7.5cqmin;line-height:1;
-  background:radial-gradient(circle,rgba(255,255,255,.15),transparent 70%)}
 .stats{display:flex;flex-direction:column;align-items:flex-end;gap:.7cqmin}
 .clock{font-size:5.2cqmin;line-height:1;color:#e6e6e6}
 .sabar{width:20cqmin;height:2cqmin;border:.35cqmin solid #000;background:#3a0b0c}
@@ -63,11 +61,13 @@ body.nohud .hudpart{opacity:0}
 .sabar.armor{background:#4a4a4a}.sabar.armor i{background:var(--sa-armor);width:70%}
 .sabar.hp i{background:var(--sa-hp);width:90%}
 .money{font-size:5.6cqmin;line-height:1;color:var(--sa-cash);letter-spacing:.2cqmin}
-.stars{display:flex;gap:.3cqmin}
-.stars svg{width:3.6cqmin;height:3.6cqmin}
-.stars svg path{fill:rgba(0,0,0,.35);stroke:#000;stroke-width:1.6;stroke-linejoin:round}
-.stars svg.lit path{fill:var(--sa-star);animation:flash .6s steps(2) infinite}
-@keyframes flash{50%{fill:#7d5f22}}
+/* forearm pump meter, where SA shows wanted stars: fills as you spam moves, drains when you rest */
+.pump{display:flex;align-items:center;gap:1.2cqmin}
+.pumplabel{font-size:3.8cqmin;line-height:1;color:#e6e6e6}
+.sabar.pumpbar{width:14cqmin;background:#2a1a0c}
+.sabar.pumpbar i{width:0;background:linear-gradient(90deg,#f0b43c,#e2611f 60%,#c41c1c)}
+.pump.max .pumpbar i{animation:flash .5s steps(2) infinite}
+@keyframes flash{50%{filter:brightness(1.8)}}
 /* help box, top-left */
 #help{position:fixed;top:calc(3cqmin + var(--it));left:calc(4cqmin + var(--il));max-width:46cqmin;padding:1.6cqmin 2cqmin;background:rgba(0,0,0,.72);
   font-size:2.7cqmin;line-height:1.45;border-radius:.6cqmin;pointer-events:none;opacity:0;transition:opacity .15s}
@@ -171,7 +171,7 @@ body.playing .tools{opacity:0}
   .tools{top:calc(2cqh + var(--it));max-width:92cqw}
   .tools button{font-size:3cqmin}
 }
-@media (prefers-reduced-motion:reduce){.stars svg.lit path{animation:none}}
+@media (prefers-reduced-motion:reduce){.pump.max .pumpbar i{animation:none}}
 </style>
 </head>
 <body>
@@ -180,13 +180,12 @@ body.playing .tools{opacity:0}
 
 <div id="radar" class="hudpart"><div class="radarN">N</div><div class="blipY"></div><div class="player" id="blip"></div></div>
 <div id="topright" class="hudpart">
-  <div class="fist" aria-hidden="true">👊</div>
   <div class="stats">
     <div class="clock price out" id="clock">12:00</div>
     <div class="sabar armor"><i></i></div>
     <div class="sabar hp"><i id="hp"></i></div>
     <div class="money price out" id="money">$00000000</div>
-    <div class="stars" id="stars"></div>
+    <div class="pump" id="pumpBox"><span class="pumplabel price out">PUMP</span><div class="sabar pumpbar"><i id="pump"></i></div></div>
   </div>
 </div>
 <div id="help" class="hudpart"></div>
@@ -286,13 +285,13 @@ async function startCam() {
 
 /* ---- HUD state ---- */
 let cash = 0, shown = 0, heat = 0;
-const STAR = '<svg viewBox="0 0 24 24"><path d="M12 1.8l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.6l-6.3 3.6 1.5-7.1L1.8 9.2 9 8.4z"/></svg>';
-$('#stars').innerHTML = STAR.repeat(6); // San Andreas has six wanted stars
-function renderStars() {
-  const n = Math.min(6, Math.floor(heat / 4));
-  document.querySelectorAll('#stars svg').forEach((s, i) => s.classList.toggle('lit', i < n));
+const PUMP_MAX = 24; // moves in a row until the forearms are fully pumped
+function renderPump() {
+  const pct = Math.min(100, heat / PUMP_MAX * 100);
+  $('#pump').style.width = pct + '%';
+  $('#pumpBox').classList.toggle('max', pct >= 100);
 }
-setInterval(() => { if (heat > 0) { heat--; renderStars(); } }, 1500);
+setInterval(() => { if (heat > 0) { heat--; renderPump(); } }, 1500);
 const fmtCash = n => '$' + String(n).padStart(8, '0');
 function addCash(n) { cash += n; }
 (function tick() {
@@ -306,7 +305,7 @@ setInterval(() => {
   $('#clock').textContent = String(Math.floor(gameMin / 60)).padStart(2, '0') + ':' + String(gameMin % 60).padStart(2, '0');
 }, 1000);
 function resetHud() {
-  cash = shown = 0; $('#money').textContent = fmtCash(0); heat = 0; renderStars();
+  cash = shown = 0; $('#money').textContent = fmtCash(0); heat = 0; renderPump();
   $('#hp').style.width = '90%'; document.body.classList.remove('wasted');
 }
 
@@ -353,8 +352,8 @@ function banner(kind, title, sub, dur = 4.5) {
 
 /* ---- moves ---- */
 const ACTS = {
-  A: ['FLAGGING', '#3ddc84'], B: ['HOOK', '#ff4d4d'], X: ['GRAB HOLD', '#3b8cff'], Y: ['CHALK UP', '#ffc928'],
-  L: ['MANTLE', '#fff'], R: ['DYNO!', '#ff9a3c'],
+  A: ['FLAGGING', '#3ddc84'], B: ['HOOK', '#ff4d4d'], X: ['GRAB HOLD', '#3b8cff'], Y: ['DYNO!', '#ffc928'],
+  L: ['MANTLE', '#fff'], R: ['CHALK UP', '#fff'],
   UP: ['REACH UP', '#fff'], DOWN: ['STEP DOWN', '#fff'], LEFT: ['TRAVERSE LEFT', '#fff'], RIGHT: ['TRAVERSE RIGHT', '#fff'],
 };
 function action(k) {
@@ -363,14 +362,14 @@ function action(k) {
   const a = ACTS[k]; if (!a) return;
   pop(a[0], a[1]); click(); buzz(15);
   addCash(50 + Math.floor(Math.random() * 450));
-  heat++; renderStars();
+  heat = Math.min(PUMP_MAX + 6, heat + 1); renderPump();
   if (Math.random() < .25) subtitle(LINES[Math.floor(Math.random() * LINES.length)]);
 }
 function passed() {
   document.body.classList.remove('wasted');
   banner('passed', 'mission passed!', 'respect +', 6);
   play('passed'); buzz([40, 60, 40]);
-  addCash(5000); heat = 0; renderStars(); $('#hp').style.width = '100%';
+  addCash(5000); heat = 0; renderPump(); $('#hp').style.width = '100%';
 }
 function hereWeGoAgain() {
   play('again'); buzz(30);
@@ -412,7 +411,7 @@ function moveStick(e) {
   const ang = Math.atan2(dy, dx) * 180 / Math.PI;
   blip.style.transform = `rotate(${ang + 90}deg)`;
   const dir = ang > -135 && ang <= -45 ? 'UP' : ang > -45 && ang <= 45 ? 'RIGHT' : ang > 45 && ang <= 135 ? 'DOWN' : 'LEFT';
-  if (dir !== lastDir) { lastDir = dir; pop('CLIMB ' + dir); click(); buzz(10); addCash(20 + Math.floor(Math.random() * 80)); heat++; renderStars(); }
+  if (dir !== lastDir) { lastDir = dir; pop('CLIMB ' + dir); click(); buzz(10); addCash(20 + Math.floor(Math.random() * 80)); heat = Math.min(PUMP_MAX + 6, heat + 1); renderPump(); }
 }
 stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); sid = e.pointerId; moveStick(e); });
 stick.addEventListener('pointermove', e => { if (e.pointerId === sid) moveStick(e); });
