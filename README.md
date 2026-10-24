@@ -16,6 +16,19 @@ Play your clip behind an on-screen controller, press buttons along with it, and 
 
 **SPEED 0.5x** plays the clip at half speed so the timing is easier. Speed the recording up 2x afterwards.
 
+### Overlay only (GTA version): edit it onto the original clip
+
+The GTA version remembers every press from your last **3-2-1 PLAY** take, stamped with the clip's own time.
+
+1. Do a take as above (no need to screen record it).
+2. Tap **▶ REPLAY ON KEY** and start screen recording. The clip is hidden, the background turns a plain key colour,
+   and your presses replay at the same moments, with sounds.
+3. In your editor, put the recording over the original clip, cut off the 3-2-1 countdown so both start together,
+   and remove the background with chroma key.
+
+**KEY** switches the background between magenta (default), green and blue. Magenta is the default because the HUD
+money, the A button and FLAGGING are green.
+
 ## ⚠️ About the GTA version
 
 **This version looks and sounds very close to GTA San Andreas. It is a fan-made parody for entertainment only. Do not use it for commercial purposes.**

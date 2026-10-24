@@ -171,6 +171,16 @@ body.playing .tools{opacity:0}
   .tools{top:calc(2cqh + var(--it));max-width:92cqw}
   .tools button{font-size:3cqmin}
 }
+/* ---------- key-colour replay: plain background so the overlay can be chroma-keyed onto the clip.
+   Everything semi-transparent goes solid, or it would leave tinted edges after keying. ---------- */
+body.keymode #cam{visibility:hidden}
+body.keymode #stage{background:var(--key,#ff00ff)}
+body.keymode #stick,body.keymode .sh:not(.on),body.keymode #dpad .d:not(.on),body.keymode #dpad .c,
+body.keymode .fb:not(.on),body.keymode .pill:not(.on){background:#2b2e35}
+body.keymode #stick,body.keymode #knob,body.keymode .fb{box-shadow:none}
+body.keymode #help{background:#111}
+body.keymode #radar{box-shadow:none}
+body:not(.hastake) .takeonly{display:none}
 @media (prefers-reduced-motion:reduce){.pump.max .pumpbar i{animation:none}}
 </style>
 </head>
@@ -200,6 +210,8 @@ body.playing .tools{opacity:0}
   <button id="restart" class="vonly" type="button">▶ 3-2-1 PLAY</button>
   <button id="play" class="vonly" type="button">PLAY</button>
   <button id="speed" class="vonly" type="button">SPEED 1x</button>
+  <button id="replay" class="vonly takeonly" type="button">▶ REPLAY ON KEY</button>
+  <button id="keyBtn" class="vonly takeonly" type="button">KEY MAGENTA</button>
   <button id="frame" type="button">FRAME AUTO</button>
   <button id="hudBtn" type="button">HUD ON</button>
   <button id="snd" type="button">SOUND ON</button>
@@ -283,6 +295,15 @@ async function startCam() {
   }
 }
 
+/* ---- seeded random: reset at the start of a take and of its replay, so both look identical ---- */
+let seed = 1;
+function rng() {
+  seed = seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+
 /* ---- HUD state ---- */
 let cash = 0, shown = 0, heat = 0;
 const PUMP_MAX = 24; // moves in a row until the forearms are fully pumped
@@ -361,9 +382,9 @@ function action(k) {
   if (k === 'SELECT') return hereWeGoAgain();
   const a = ACTS[k]; if (!a) return;
   pop(a[0], a[1]); click(); buzz(15);
-  addCash(50 + Math.floor(Math.random() * 450));
+  addCash(50 + Math.floor(rng() * 450));
   heat = Math.min(PUMP_MAX + 6, heat + 1); renderPump();
-  if (Math.random() < .25) subtitle(LINES[Math.floor(Math.random() * LINES.length)]);
+  if (rng() < .25) subtitle(LINES[Math.floor(rng() * LINES.length)]);
 }
 function passed() {
   document.body.classList.remove('wasted');
@@ -386,24 +407,32 @@ function wasted() {
   wastedT = setTimeout(() => { document.body.classList.remove('wasted'); cam.playbackRate = rate; }, 6000);
 }
 
+/* ---- take recording: every input, stamped with the clip's own time ---- */
+let take = null, recording = false, replaying = false;
+function rec(ev) { if (recording) take.events.push({ t: +cam.currentTime.toFixed(3), ...ev }); }
+
 /* ---- buttons (multi-touch) ---- */
+function pressDown(el) {
+  el.classList.add('on'); action(el.dataset.k);
+  if (el.dataset.k === 'B') el._hold = setTimeout(wasted, 900);
+}
+function pressUp(el) { el.classList.remove('on'); clearTimeout(el._hold); }
 document.querySelectorAll('.btn').forEach(el => {
-  let holdT;
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); el.setPointerCapture?.(e.pointerId);
-    el.classList.add('on'); action(el.dataset.k);
-    if (el.dataset.k === 'B') holdT = setTimeout(wasted, 900);
+    e.preventDefault(); if (replaying) return;
+    el.setPointerCapture?.(e.pointerId);
+    rec({ k: el.dataset.k, d: 1 }); pressDown(el);
   });
-  const up = () => { el.classList.remove('on'); clearTimeout(holdT); };
+  const up = () => { if (replaying || !el.classList.contains('on')) return; rec({ k: el.dataset.k, d: 0 }); pressUp(el); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
 });
 
-/* ---- stick ---- */
+/* ---- stick: positions are stored as fractions of the stick radius, so a replay works at any size ---- */
 const stick = $('#stick'), knob = $('#knob'), blip = $('#blip');
 let sid = null, lastDir = null;
-function moveStick(e) {
-  const r = stick.getBoundingClientRect(), R = r.width / 2;
-  let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R);
+function stickTo(nx, ny) {
+  const R = stick.getBoundingClientRect().width / 2;
+  let dx = nx * R, dy = ny * R;
   const dist = Math.hypot(dx, dy), max = R * .62;
   if (dist > max) { dx *= max / dist; dy *= max / dist; }
   knob.style.transform = `translate(${dx}px,${dy}px)`;
@@ -411,11 +440,17 @@ function moveStick(e) {
   const ang = Math.atan2(dy, dx) * 180 / Math.PI;
   blip.style.transform = `rotate(${ang + 90}deg)`;
   const dir = ang > -135 && ang <= -45 ? 'UP' : ang > -45 && ang <= 45 ? 'RIGHT' : ang > 45 && ang <= 135 ? 'DOWN' : 'LEFT';
-  if (dir !== lastDir) { lastDir = dir; pop('CLIMB ' + dir); click(); buzz(10); addCash(20 + Math.floor(Math.random() * 80)); heat = Math.min(PUMP_MAX + 6, heat + 1); renderPump(); }
+  if (dir !== lastDir) { lastDir = dir; pop('CLIMB ' + dir); click(); buzz(10); addCash(20 + Math.floor(rng() * 80)); heat = Math.min(PUMP_MAX + 6, heat + 1); renderPump(); }
 }
-stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); sid = e.pointerId; moveStick(e); });
+function stickRelease() { lastDir = null; knob.style.transform = ''; }
+function moveStick(e) {
+  const r = stick.getBoundingClientRect(), R = r.width / 2;
+  const nx = +((e.clientX - (r.left + R)) / R).toFixed(3), ny = +((e.clientY - (r.top + R)) / R).toFixed(3);
+  rec({ s: [nx, ny] }); stickTo(nx, ny);
+}
+stick.addEventListener('pointerdown', e => { e.preventDefault(); if (replaying) return; stick.setPointerCapture(e.pointerId); sid = e.pointerId; moveStick(e); });
 stick.addEventListener('pointermove', e => { if (e.pointerId === sid) moveStick(e); });
-const release = e => { if (e.pointerId !== sid) return; sid = null; lastDir = null; knob.style.transform = ''; };
+const release = e => { if (e.pointerId !== sid) return; sid = null; rec({ s: null }); stickRelease(); };
 stick.addEventListener('pointerup', release); stick.addEventListener('pointercancel', release);
 
 /* ---- tools ---- */
@@ -473,18 +508,65 @@ $('#file').addEventListener('change', async e => {
 const setPlaying = p => { document.body.classList.toggle('playing', p); $('#play').textContent = p ? 'PAUSE' : 'PLAY'; };
 cam.addEventListener('play', () => setPlaying(true));
 cam.addEventListener('pause', () => { if (!counting) setPlaying(false); });
-cam.addEventListener('ended', () => setPlaying(false));
+cam.addEventListener('ended', () => { setPlaying(false); recording = false; });
 $('#play').addEventListener('click', () => { if (videoMode) cam.paused ? cam.play() : cam.pause(); });
-$('#restart').addEventListener('click', async () => {
-  if (counting) return;
-  counting = true; cam.pause(); cam.currentTime = 0; cam.playbackRate = rate; resetHud();
-  document.body.classList.add('playing');
+async function countdown() {
   const c = $('#count');
   for (const n of ['3', '2', '1']) { c.textContent = n; c.hidden = false; click(); await new Promise(r => setTimeout(r, 800)); }
-  c.hidden = true; counting = false;
+  c.hidden = true;
+}
+$('#restart').addEventListener('click', async () => {
+  if (counting || replaying) return;
+  counting = true; recording = false; cam.pause(); cam.currentTime = 0; cam.playbackRate = rate; resetHud();
+  document.body.classList.add('playing');
+  await countdown();
+  counting = false;
+  seed = 1; take = { events: [] }; recording = true; document.body.classList.add('hastake');
   await cam.play().catch(() => setPlaying(false));
   missionStart();
 });
+
+$('#replay').addEventListener('click', async () => {
+  if (!take || counting || replaying) return;
+  recording = false; cam.pause(); cam.playbackRate = rate;
+  replaying = counting = true; resetHud();
+  document.body.classList.add('keymode', 'playing');
+  await countdown(); // start screen recording before this ends; the clip's first frame is right after "1"
+  counting = false;
+  seed = 1; missionStart();
+  const evs = take.events, end = (isFinite(cam.duration) ? cam.duration : (evs.at(-1)?.t || 0) + 6);
+  const t0 = performance.now(); let i = 0;
+  (function step() {
+    const now = (performance.now() - t0) / 1000;
+    while (i < evs.length && evs[i].t <= now) {
+      const ev = evs[i++];
+      if ('k' in ev) { const el = document.querySelector(`.btn[data-k="${ev.k}"]`); ev.d ? pressDown(el) : pressUp(el); }
+      else if (ev.s) stickTo(ev.s[0], ev.s[1]);
+      else stickRelease();
+    }
+    if (now < end && replaying) return requestAnimationFrame(step);
+    document.querySelectorAll('.btn.on').forEach(pressUp); stickRelease();
+    replaying = false;
+    document.body.classList.remove('keymode', 'playing');
+    cam.currentTime = 0;
+  })();
+});
+
+const KEYS = [['MAGENTA', '#ff00ff'], ['GREEN', '#00ff00'], ['BLUE', '#0000ff']];
+function setKey(name) {
+  const k = KEYS.find(x => x[0] === name) || KEYS[0];
+  document.body.style.setProperty('--key', k[1]);
+  $('#keyBtn').textContent = 'KEY ' + k[0];
+  try { localStorage.setItem('key', k[0]); } catch (e) {}
+}
+$('#keyBtn').addEventListener('click', () => {
+  const cur = $('#keyBtn').textContent.split(' ')[1] || 'MAGENTA';
+  setKey(KEYS[(KEYS.findIndex(x => x[0] === cur) + 1) % KEYS.length][0]);
+});
+let savedKey = 'MAGENTA';
+try { savedKey = localStorage.getItem('key') || 'MAGENTA'; } catch (e) {}
+setKey(savedKey);
+
 $('#speed').addEventListener('click', e => {
   rate = rate === 1 ? .5 : 1;
   cam.playbackRate = cam.defaultPlaybackRate = rate;
