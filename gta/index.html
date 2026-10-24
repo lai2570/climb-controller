@@ -148,20 +148,20 @@ body.playing .tools{opacity:0}
   #topright{top:calc(9cqmin + var(--it));right:5cqmin}
   #help{top:calc(9cqmin + var(--it));left:5cqmin;max-width:44cqmin;font-size:3.1cqmin}
   .key{width:3.8cqmin;height:3.8cqmin;font-size:2.4cqmin}
-  #stick{left:7cqmin;bottom:calc(3cqh + var(--ib));width:26cqmin;height:26cqmin}
+  #stick{left:7cqmin;bottom:calc(10cqh + var(--ib));width:26cqmin;height:26cqmin}
   #knob{width:12cqmin;height:12cqmin;margin:-6cqmin 0 0 -6cqmin}
-  #dpad{left:40cqmin;bottom:calc(3cqh + 3cqmin + var(--ib));width:20cqmin;height:20cqmin}
-  #face{right:7cqmin;bottom:calc(3cqh + var(--ib));width:29cqmin;height:29cqmin}
+  #dpad{left:40cqmin;bottom:calc(10cqh + 3cqmin + var(--ib));width:20cqmin;height:20cqmin}
+  #face{right:7cqmin;bottom:calc(10cqh + var(--ib));width:29cqmin;height:29cqmin}
   .fb{width:10.5cqmin;height:10.5cqmin;font-size:4.8cqmin}
   .fb[data-k=Y],.fb[data-k=A]{left:9.25cqmin}
   .fb[data-k=X],.fb[data-k=B]{top:9.25cqmin}
   .sh{width:14cqmin;height:7.5cqmin;font-size:3.4cqmin}
-  #L{left:7cqmin;bottom:calc(3cqh + 31cqmin + var(--ib))}
-  #R{right:7cqmin;bottom:calc(3cqh + 31cqmin + var(--ib))}
-  .mid{bottom:calc(3cqh + 31cqmin + var(--ib))}
+  #L{left:7cqmin;bottom:calc(10cqh + 31cqmin + var(--ib))}
+  #R{right:7cqmin;bottom:calc(10cqh + 31cqmin + var(--ib))}
+  .mid{bottom:calc(10cqh + 31cqmin + var(--ib))}
   .pill{width:11cqmin;font-size:2.4cqmin;padding:1.6cqmin 0}
-  #radar{left:6cqmin;bottom:calc(3cqh + 42cqmin + var(--ib));width:26cqmin;height:26cqmin}
-  #sub{bottom:calc(3cqh + 72cqmin + var(--ib));max-width:88cqw;font-size:4.4cqmin}
+  #radar{left:6cqmin;bottom:calc(10cqh + 42cqmin + var(--ib));width:26cqmin;height:26cqmin}
+  #sub{bottom:calc(10cqh + 72cqmin + var(--ib));max-width:88cqw;font-size:4.4cqmin}
   #pops{top:22cqh}
   /* big text sits in the upper third so it never collides with subtitles */
   #banner{justify-content:flex-start;padding-top:30cqh}
@@ -247,7 +247,7 @@ let facing = 'environment', stream = null, videoMode = false;
 const SND_BASE = 'https://www.myinstants.com/media/sounds/';
 const SOUNDS = {
   passed: 'gta-sa-mission-passed-theme.mp3',                          // mission passed / respect +
-  train: 'all-we-had-to-do-was-follow-the-damn-train-cj_dTotjkJ.mp3', // Big Smoke, plays on wasted
+  wasted: 'gta-v-wasted-death-sound.mp3',                            // GTA 5 wasted sound
   again: 'gta-san-andreas-ah-shit-here-we-go-again.mp3',              // CJ
   blip: 'gta-sa-menu.mp3',                                            // help box beep
 };
@@ -380,10 +380,9 @@ let wastedT;
 function wasted() {
   document.body.classList.add('wasted');
   $('#hp').style.width = '0%';
-  buzz(400);
+  play('wasted'); buzz(400);
   if (videoMode && !cam.paused) cam.playbackRate = .35; // slow-motion death
   setTimeout(() => banner('wasted', 'wasted', '', 5), 500);
-  setTimeout(() => { play('train'); subtitle('All you had to do was follow the damn {train}, CJ!', 4000); }, 1400);
   clearTimeout(wastedT);
   wastedT = setTimeout(() => { document.body.classList.remove('wasted'); cam.playbackRate = rate; }, 6000);
 }
